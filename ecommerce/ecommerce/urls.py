@@ -1,5 +1,5 @@
 """
-URL configuration for e_commerce_grupo_4 project.
+URL configuration for ecommerce project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
