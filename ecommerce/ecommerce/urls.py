@@ -20,5 +20,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('usuarios.urls')),  # 👈 nuestra API
+    path('', include('tienda.urls')),
+    path('api/', include('usuarios.urls')),  # si ya tenés la app de usuarios
 ]
