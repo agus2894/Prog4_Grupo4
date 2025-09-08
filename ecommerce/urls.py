@@ -17,9 +17,13 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework import routers
+from usuarios.views import UserViewSet
+
+router = routers.DefaultRouter()
+router.register(r'users', UserViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('tienda.urls')),
-    path('api/', include('usuarios.urls')),  # si ya tenés la app de usuarios
+    path('api/', include(router.urls)),
 ]
