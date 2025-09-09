@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 #!/home/agustin/Escritorio/Programacion/Programacion/venv/bin/python3
+=======
+#!/home/agustin/Escritorio/Programacion/venv/bin/python3
+>>>>>>> main
 # -*- coding: utf-8 -*-
 import re
 import sys
