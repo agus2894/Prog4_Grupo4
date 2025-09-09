@@ -1,0 +1,9 @@
+{% extends 'tienda/base.html' %}
+
+{% block title %}Cerrar Sesión{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Sesión cerrada</h2>
+<p>Has cerrado sesión correctamente.</p>
+<a href="{% url 'index' %}" class="btn btn-primary">Volver al inicio</a>
+{% endblock %}
