@@ -1,8 +1,10 @@
-{% extends 'tienda/base.html' %}
-
+{% extends "tienda/base.html" %}
 {% block title %}Inicio{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Bienvenido a Mi Tienda</h1>
-<p>Explora nuestros productos o inicia sesión para comprar y vender.</p>
+  <div class="text-center">
+    <h1 class="mb-4">Bienvenido al Marketplace</h1>
+    <a href="/login" class="btn btn-primary btn-lg">Iniciar Sesión</a>
+    <a href="/signup" class="btn btn-success btn-lg">Registrarse</a>
+  </div>
 {% endblock %}
