@@ -4,6 +4,7 @@ from tienda import views as tienda_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),  # URLs de django-allauth
 
     # Tienda (frontend)
     path('', tienda_views.index, name='index'),

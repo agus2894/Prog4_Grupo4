@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # apps de Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -39,12 +40,31 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
         
     # apps de terceros
-    'rest_framework',
+    'rest_framework'
+   
+    # Necesario para django-allauth
+    'django.contrib.sites',
+   
+    # allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
+    # Proveedores de autenticación social
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.github',
 
     # tus apps
     'usuarios',
     'tienda',
+    'usuarios',
 ]
+SITE_ID = 1
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend',
+                           'allauth.account.auth_backends.AuthenticationBackend']
+
+LOGIN_REDIRECT_URL = '/' # Redirige a la página de inicio después de iniciar sesión
+LOGOUT_REDIRECT_URL = '/' # Redirige a la página de inicio después de cerrar sesión
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -54,6 +74,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    '"allauth.account.middleware.AccountMiddleware"',
+
 ]
 
 ROOT_URLCONF = 'ecommerce.urls'
@@ -65,6 +87,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
