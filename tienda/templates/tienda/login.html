@@ -1,16 +1,30 @@
-{% extends "tienda/base.html" %}
+{% extends "base.html" %}
+
+{% load socialaccount %}
+
+{% block title %}Entrar{% endblock %}
+
 {% block content %}
-<h2 class="mb-3">Iniciar sesión</h2>
+
+<h2>Entrar</h2>
+
 <form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-        <label for="username" class="form-label">Usuario</label>
-        <input type="text" class="form-control" name="username" required>
-    </div>
-    <div class="mb-3">
-        <label for="password" class="form-label">Contraseña</label>
-        <input type="password" class="form-control" name="password" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Ingresar</button>
+
+{% csrf_token %}
+
+{{ form.as_p }}
+
+<button type="submit">Entrar</button>
+
 </form>
+
+<p>O entrar con:</p>
+
+<a href="{% provider_login_url 'google' %}"><img src="/static/google-logo.png" width="30"> Google</a>
+
+<a href="{% provider_login_url 'github' %}"><img src="/static/github-logo.png" width="30"> GitHub</a>
+
+<p>¿No tenés cuenta? <a href="{% url 'account_signup' %}">Registrate</a></p>
+
 {% endblock %}
+
