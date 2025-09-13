@@ -3,17 +3,12 @@
 {% block title %}Salir{% endblock %}
 
 {% block content %}
-
-<h2>¿Seguro querés salir?</h2>
-
-<form method="post">
-
-{% csrf_token %}
-
-<button type="submit">Salir</button>
-
-</form>
-
-<a href="{% url 'home' %}">Cancelar</a>
-
+<div class="text-center mt-5">
+    <h3>¿Seguro que querés cerrar sesión?</h3>
+    <form method="post" action="{% url 'account_logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Cerrar sesión</button>
+        <a href="{% url 'index' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
 {% endblock %}

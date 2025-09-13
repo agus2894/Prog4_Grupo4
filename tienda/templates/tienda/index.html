@@ -1,5 +1,15 @@
 {% extends "tienda/base.html" %}
+
+{% block title %}Inicio{% endblock %}
+
 {% block content %}
-<h1 class="text-center">Bienvenido a la Tiendita</h1>
-<p class="text-center">Proyecto de Programacion 4</p>
+<div class="text-center">
+    <h1 class="mb-4">Bienvenido a Mi Tienda 🛒</h1>
+    {% if user.is_authenticated %}
+        <p>Ya estás logueado como <strong>{{ user.username }}</strong>.</p>
+    {% else %}
+        <p><a href="{% url 'account_login' %}" class="btn btn-primary">Entrar</a>
+        o <a href="{% url 'account_signup' %}" class="btn btn-success">Registrarse</a></p>
+    {% endif %}
+</div>
 {% endblock %}
