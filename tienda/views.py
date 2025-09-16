@@ -1,13 +1,9 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from rest_framework import permissions
+from .models import Product
+from .serializers import ProductSerializer
 
-def index(request):
-    return render(request, 'tienda/index.html')
-
-def login_view(request):
-    return render(request, 'tienda/login.html')
-
-def signup_view(request):
-    return render(request, 'tienda/signup.html')
-
-def logout_view(request):
-    return render(request, 'tienda/logout.html')
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.AllowAny]

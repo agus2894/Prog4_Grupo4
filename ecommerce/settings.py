@@ -1,16 +1,23 @@
 import os
 from pathlib import Path
+import environ
 import dj_database_url
-from decouple import config, Csv
 
+# --- Paths base ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# 🔑 Claves y modo debug desde .env
-SECRET_KEY = config("SECRET_KEY", default="inseguro-para-dev")
-DEBUG = config("DEBUG", default=False, cast=bool)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=Csv())
+# --- Cargar variables de entorno ---
+env = environ.Env(
+    DEBUG=(bool, True)
+)
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-# Apps instaladas
+# --- Seguridad ---
+SECRET_KEY = env("SECRET_KEY", default="dev-secret-no-usar-en-prod")
+DEBUG = env("DEBUG", default=True)
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+
+# --- Apps instaladas ---
 INSTALLED_APPS = [
     # Django apps
     "django.contrib.admin",
@@ -21,21 +28,23 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
 
-    # terceros
+    # Terceros
     "rest_framework",
+    "drf_yasg",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.github",
 
-    # apps propias
-    "usuarios",
+    # Apps propias
     "tienda",
+    "usuarios",
 ]
 
 SITE_ID = 1
 
+# --- Autenticación ---
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
@@ -44,9 +53,15 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
+# --- Configuración actualizada de allauth ---
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+ACCOUNT_EMAIL_VERIFICATION = "none"
+
+# --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # static en Render
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -56,12 +71,14 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
+# --- URLS ---
 ROOT_URLCONF = "ecommerce.urls"
 
+# --- Templates ---
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  # opcional si usas templates globales
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -74,21 +91,18 @@ TEMPLATES = [
     },
 ]
 
+# --- WSGI ---
 WSGI_APPLICATION = "ecommerce.wsgi.application"
 
-# ⚡️ Base de datos: usa DATABASE_URL en Render, y PostgreSQL/SQLite local
+# --- Base de datos ---
 DATABASES = {
     "default": dj_database_url.config(
-        default=config(
-            "DATABASE_URL",
-            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
-        ),
+        default=env("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
         conn_max_age=600,
-        ssl_require=False,
     )
 }
 
-# Passwords
+# --- Validadores de contraseña ---
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -96,32 +110,37 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Internacionalización
-LANGUAGE_CODE = "en-us"
+# --- Internacionalización ---
+LANGUAGE_CODE = "es"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# Archivos estáticos (Render necesita esto)
+# --- Archivos estáticos ---
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# --- Media ---
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# --- Default primary key ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# 🔗 Claves sociales (Google/GitHub) desde .env
+# --- Config social login ---
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {
-            "client_id": config("GOOGLE_CLIENT_ID", default=""),
-            "secret": config("GOOGLE_CLIENT_SECRET", default=""),
+            "client_id": env("GOOGLE_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
             "key": "",
         }
     },
     "github": {
         "APP": {
-            "client_id": config("GITHUB_CLIENT_ID", default=""),
-            "secret": config("GITHUB_CLIENT_SECRET", default=""),
+            "client_id": env("GITHUB_CLIENT_ID", default=""),
+            "secret": env("GITHUB_CLIENT_SECRET", default=""),
             "key": "",
         }
     },

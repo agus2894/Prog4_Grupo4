@@ -1,14 +1,14 @@
-{% extends "base.html" %}
+{% extends "tienda/base.html" %}
 
 {% block title %}Salir{% endblock %}
 
 {% block content %}
-<div class="text-center mt-5">
-    <h3>¿Seguro que querés cerrar sesión?</h3>
-    <form method="post" action="{% url 'account_logout' %}">
+<div class="text-center">
+    <h2>¿Seguro que querés salir?</h2>
+    <form method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Cerrar sesión</button>
-        <a href="{% url 'index' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">Salir</button>
+        <a href="{% url 'home' %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 {% endblock %}

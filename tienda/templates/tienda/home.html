@@ -1,0 +1,17 @@
+{% extends "tienda/base.html" %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="mb-4">Bienvenido a Mercadito</h1>
+    {% if user.is_authenticated %}
+        <p>Ya estás logueado como <strong>{{ user.username }}</strong>.</p>
+        <a class="btn btn-danger" href="{% url 'account_logout' %}">Cerrar sesión</a>
+    {% else %}
+        <p>Por favor, entra o regístrate para continuar.</p>
+        <a class="btn btn-primary me-2" href="{% url 'account_login' %}">Entrar</a>
+        <a class="btn btn-success" href="{% url 'account_signup' %}">Registrarse</a>
+    {% endif %}
+</div>
+{% endblock %}
