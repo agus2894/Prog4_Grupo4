@@ -1,36 +1,49 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
 from rest_framework import routers
-from tienda.views import ProductViewSet
-
-# Swagger imports
-from rest_framework import permissions
+from tienda.views import ProductViewSet, redirect_dashboard, vendedor_dashboard
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from rest_framework import permissions
 
-router = routers.DefaultRouter()
-router.register(r"products", ProductViewSet)
-
+# --- Swagger / Redoc ---
 schema_view = get_schema_view(
     openapi.Info(
-        title="Mercadito API",
-        default_version="v1",
-        description="API para manejar productos de Mercadito (compra, venta, trueque).",
-        terms_of_service="https://www.google.com/policies/terms/",
-        license=openapi.License(name="BSD License"),
+        title="Mi API",
+        default_version='v1',
+        description="Documentación de la API",
     ),
     public=True,
-    permission_classes=[permissions.AllowAny],
+    permission_classes=(permissions.AllowAny,),
 )
 
+# --- Router DRF ---
+router = routers.DefaultRouter()
+router.register(r'products', ProductViewSet, basename='product')
+
+# --- URLs ---
 urlpatterns = [
+    # Admin
     path("admin/", admin.site.urls),
+
+    # API de productos
     path("api/", include(router.urls)),
 
     # Autenticación con allauth
     path("accounts/", include("allauth.urls")),
 
-    # Swagger endpoints
+    # Dashboards
+    path("redirect-dashboard/", redirect_dashboard, name="redirect_dashboard"),
+    path("vendedor/", vendedor_dashboard, name="vendedor_dashboard"),
+
+    # Documentación API
     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+
+    # Página de inicio
+    path("", TemplateView.as_view(template_name="tienda/home.html"), name="home"),
+
+    # URLs de la app tienda
+    path("tienda/", include("tienda.urls")),
 ]

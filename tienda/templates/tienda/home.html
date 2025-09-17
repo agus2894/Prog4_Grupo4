@@ -1,17 +1,24 @@
-{% extends "tienda/base.html" %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mercadito - Inicio</title>
+</head>
+<body>
+    <h1>Bienvenido a Mercadito</h1>
 
-{% block title %}Inicio{% endblock %}
-
-{% block content %}
-<div class="text-center">
-    <h1 class="mb-4">Bienvenido a Mercadito</h1>
     {% if user.is_authenticated %}
-        <p>Ya estás logueado como <strong>{{ user.username }}</strong>.</p>
-        <a class="btn btn-danger" href="{% url 'account_logout' %}">Cerrar sesión</a>
+        <p>Hola, {{ user.username }}!</p>
+        <p><a href="{% url 'redirect_dashboard' %}">Ir al Dashboard</a></p>
+        <p><a href="{% url 'account_logout' %}">Cerrar sesión</a></p>
     {% else %}
-        <p>Por favor, entra o regístrate para continuar.</p>
-        <a class="btn btn-primary me-2" href="{% url 'account_login' %}">Entrar</a>
-        <a class="btn btn-success" href="{% url 'account_signup' %}">Registrarse</a>
+        <p><a href="{% url 'account_login' %}">Iniciar sesión</a></p>
+        <p><a href="{% url 'account_signup' %}">Registrarse</a></p>
+
+        <h3>O ingresar con:</h3>
+        <a href="{% provider_login_url 'google' %}">Google</a><br>
+        <a href="{% provider_login_url 'github' %}">GitHub</a>
     {% endif %}
-</div>
-{% endblock %}
+</body>
+</html>

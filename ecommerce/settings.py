@@ -50,10 +50,11 @@ AUTHENTICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+# Redirecciones después de login/logout
+LOGIN_REDIRECT_URL = "/redirect-dashboard/"  # después de iniciar sesión
+LOGOUT_REDIRECT_URL = "/"                     # después de cerrar sesión
 
-# --- Configuración actualizada de allauth ---
+# Configuración de allauth
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
