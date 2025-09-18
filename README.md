@@ -5,6 +5,6 @@ Integrantes:
   Medina Ian
 
 
-Chicos fijense lo siguiente
-
-https://chatgpt.com/share/68c03714-ad34-8003-b185-78c0c461816a
+Mejorar el Frontend
+Agregar mas productos
+Falta lo de Mercado Pago
