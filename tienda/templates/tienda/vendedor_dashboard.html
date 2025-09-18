@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Dashboard de Vendedor</h1>
+    <p>Bienvenido, {{ user.username }}</p>
+
+    <h2>Mis productos</h2>
+    {% if productos %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Activo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos %}
+                <tr>
+                    <td>{{ producto.title }}</td>
+                    <td>${{ producto.price }}</td>
+                    <td>{{ producto.stock }}</td>
+                    <td>{{ producto.active|yesno:"Sí,No" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No tenés productos cargados aún.</p>
+    {% endif %}
+
+    <h2 class="mt-4">Agregar nuevo producto</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </form>
+</div>
+{% endblock %}

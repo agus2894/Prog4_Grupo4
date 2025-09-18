@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Dashboard de Vendedor</h2>
+    <a href="{% url 'tienda:dashboard_create' %}" class="btn btn-success mb-3">+ Nuevo Producto</a>
+
+    {% if productos %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Marca</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos %}
+                    <tr>
+                        <td>{{ producto.title }}</td>
+                        <td>{{ producto.marca }}</td>
+                        <td>${{ producto.price }}</td>
+                        <td>{{ producto.stock }}</td>
+                        <td>
+                            <a href="{% url 'tienda:dashboard_update' producto.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                            <a href="{% url 'tienda:dashboard_delete' producto.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay productos todavía.</p>
+    {% endif %}
+</div>
+{% endblock %}
