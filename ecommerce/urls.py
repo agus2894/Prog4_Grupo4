@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
 from rest_framework import routers
-from tienda.views import ProductViewSet, redirect_dashboard, vendedor_dashboard
+from tienda.views import ProductoViewSet, redirect_dashboard
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
@@ -20,7 +20,7 @@ schema_view = get_schema_view(
 
 # --- Router DRF ---
 router = routers.DefaultRouter()
-router.register(r'products', ProductViewSet, basename='product')
+router.register(r'productos', ProductoViewSet, basename='producto')
 
 # --- URLs ---
 urlpatterns = [
@@ -35,7 +35,6 @@ urlpatterns = [
 
     # Dashboards
     path("redirect-dashboard/", redirect_dashboard, name="redirect_dashboard"),
-    path("vendedor/", vendedor_dashboard, name="vendedor_dashboard"),
 
     # Documentación API
     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
