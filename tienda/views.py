@@ -41,6 +41,7 @@ class ProductoListView(ListView):
     template_name = "tienda/dashboard_list.html"
     context_object_name = "productos"
 
+
 @method_decorator([login_required, user_passes_test(staff_required)], name="dispatch")
 class ProductoCreateView(CreateView):
     model = Producto
@@ -48,12 +49,26 @@ class ProductoCreateView(CreateView):
     template_name = "tienda/dashboard_form.html"
     success_url = reverse_lazy("tienda:dashboard_list")
 
+    def form_valid(self, form):
+        producto = form.save(commit=False)   # NO lo guardamos todavía
+        producto.seller = self.request.user  # Asignamos el vendedor
+        producto.save()                      # Ahora sí lo guardamos
+        return super().form_valid(form)
+
+
 @method_decorator([login_required, user_passes_test(staff_required)], name="dispatch")
 class ProductoUpdateView(UpdateView):
     model = Producto
     form_class = ProductoForm
     template_name = "tienda/dashboard_form.html"
     success_url = reverse_lazy("tienda:dashboard_list")
+
+    def form_valid(self, form):
+        producto = form.save(commit=False)
+        producto.seller = self.request.user  # Reasignamos por seguridad
+        producto.save()
+        return super().form_valid(form)
+
 
 @method_decorator([login_required, user_passes_test(staff_required)], name="dispatch")
 class ProductoDeleteView(DeleteView):
@@ -73,4 +88,8 @@ def tienda_index(request):
 def vendedor_dashboard(request):
     productos = Producto.objects.filter(seller=request.user)
     form = ProductoForm()
-    return render(request, "tienda/vendedor_dashboard.html", {"productos": productos, "form": form})
+    return render(
+        request,
+        "tienda/vendedor_dashboard.html",
+        {"productos": productos, "form": form},
+    )
