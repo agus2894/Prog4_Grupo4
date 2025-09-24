@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # Apps propias
     "tienda",
     "usuarios",
+    "simple_chat",
 ]
 
 SITE_ID = 1
