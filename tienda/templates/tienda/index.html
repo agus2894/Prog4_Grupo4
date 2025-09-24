@@ -1,10 +1,59 @@
 {% extends "tienda/base.html" %}
-{% block title %}Inicio{% endblock %}
 
 {% block content %}
-  <div class="text-center">
-    <h1 class="mb-4">Bienvenido al Marketplace</h1>
-    <a href="/login" class="btn btn-primary btn-lg">Iniciar Sesión</a>
-    <a href="/signup" class="btn btn-success btn-lg">Registrarse</a>
-  </div>
+<div class="container my-5">
+
+    <!-- Título -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-success">🛒 Catálogo de Productos</h1>
+        <p class="text-muted">Explora lo que tenemos disponible para vos</p>
+    </div>
+
+    {% if productos %}
+        <div class="row g-4">
+            {% for producto in productos %}
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-lg border-0 rounded-4">
+                        
+                        <!-- Imagen (placeholder si no hay) -->
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" class="card-img-top rounded-top-4" alt="{{ producto.title }}">
+                        {% else %}
+                            <img src="https://via.placeholder.com/300x200.png?text=Mercadito" 
+                                 class="card-img-top rounded-top-4" alt="Producto sin imagen">
+                        {% endif %}
+
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold text-success">{{ producto.title }}</h5>
+                            <p class="card-text text-muted">{{ producto.description|truncatewords:20 }}</p>
+                            <ul class="list-unstyled small">
+                                <li><strong>Marca:</strong> {{ producto.marca }}</li>
+                                <li><strong>Precio:</strong> ${{ producto.price }}</li>
+                                <li><strong>Stock:</strong> {{ producto.stock }}</li>
+                            </ul>
+                        </div>
+
+                        <div class="card-footer bg-white text-center">
+                            <button class="btn btn-success w-100 rounded-pill fw-semibold">
+                                Comprar ahora
+                            </button>
+                            <p class="mt-2 text-muted small mb-0">
+                                Publicado el {{ producto.created_at|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Mensaje cuando no hay productos -->
+        <div class="text-center py-5">
+            <img src="https://cdn-icons-png.flaticon.com/512/2038/2038854.png" 
+                 alt="Sin productos" width="120" class="mb-3">
+            <h4 class="fw-bold text-secondary">No hay productos disponibles</h4>
+            <p class="text-muted">Vuelve más tarde, pronto tendremos novedades.</p>
+        </div>
+    {% endif %}
+
+</div>
 {% endblock %}

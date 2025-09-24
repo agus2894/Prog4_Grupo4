@@ -1,0 +1,13 @@
+{% extends "tienda/base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if object %}Editar{% else %}Nuevo{% endif %} Producto</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a href="{% url 'tienda:dashboard_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
