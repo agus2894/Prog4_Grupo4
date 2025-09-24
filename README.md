@@ -5,6 +5,7 @@ Integrantes:
   Medina Ian
 
 
-Mejorar el Frontend
+- Mejorar el Frontend
++ Frontend Login/singup Mejorados
 Agregar mas productos
 Falta lo de Mercado Pago
