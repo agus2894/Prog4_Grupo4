@@ -52,8 +52,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Redirecciones después de login/logout
-LOGIN_REDIRECT_URL = "/redirect-dashboard/"  # después de iniciar sesión
-LOGOUT_REDIRECT_URL = "/"                     # después de cerrar sesión
+LOGIN_REDIRECT_URL = "home"  # después de iniciar sesión
+LOGOUT_REDIRECT_URL = "home"                     # después de cerrar sesión
 
 # Configuración de allauth
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
