@@ -6,4 +6,5 @@ __pycache__/
 *.pyc
 
 # Archivos de migraciones de Django
-simple_chat/migrations/0001_initial.py
+**/migrations/*
+!**/migrations/__init__.py
