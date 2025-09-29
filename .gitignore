@@ -1,3 +1,9 @@
 .env
 venv/
 __pycache__/
+# Archivos de caché de Python
+__pycache__/
+*.pyc
+
+# Archivos de migraciones de Django
+simple_chat/migrations/0001_initial.py
