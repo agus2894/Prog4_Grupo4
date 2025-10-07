@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     "tienda",
     "usuarios",
     "simple_chat",
+    'presupuesto',
+    'telegram_bot',
 ]
 
 SITE_ID = 1
