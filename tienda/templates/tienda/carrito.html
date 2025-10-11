@@ -1,0 +1,150 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block title %}Mi Carrito{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shopping-cart"></i> Mi Carrito
+                    </h4>
+                    {% if items %}
+                    <form method="post" action="{% url 'tienda:vaciar_carrito' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                onclick="return confirm('¿Estás seguro de que quieres vaciar el carrito?')">
+                            <i class="fas fa-trash"></i> Vaciar Carrito
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body">
+                    {% if items %}
+                        {% for item in items %}
+                        <div class="row align-items-center border-bottom py-3">
+                            <div class="col-md-6">
+                                <h6 class="mb-1">{{ item.producto.title }}</h6>
+                                <small class="text-muted">{{ item.producto.marca }}</small>
+                                <p class="mb-1 text-truncate">{{ item.producto.description|truncatewords:10 }}</p>
+                            </div>
+                            
+                            <div class="col-md-2 text-center">
+                                <strong>${{ item.producto.price }}</strong>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <form method="post" action="{% url 'tienda:actualizar_carrito' item.id %}" class="d-flex">
+                                    {% csrf_token %}
+                                    <input type="number" name="cantidad" value="{{ item.cantidad }}" 
+                                           min="0" max="{{ item.producto.stock }}" 
+                                           class="form-control form-control-sm me-1" style="width: 70px;">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </form>
+                                <small class="text-muted">Stock: {{ item.producto.stock }}</small>
+                            </div>
+                            
+                            <div class="col-md-1 text-center">
+                                <strong>${{ item.subtotal }}</strong>
+                            </div>
+                            
+                            <div class="col-md-1 text-center">
+                                <a href="{% url 'tienda:eliminar_del_carrito' item.id %}" 
+                                   class="btn btn-outline-danger btn-sm"
+                                   onclick="return confirm('¿Eliminar este producto?')">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Tu carrito está vacío</h5>
+                            <p class="text-muted">¡Agrega algunos productos para comenzar!</p>
+                            <a href="{% url 'tienda:index' %}" class="btn btn-primary">
+                                <i class="fas fa-shopping-bag"></i> Seguir Comprando
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if items %}
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Resumen del Pedido</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Productos ({{ total_items }} items):</span>
+                        <span>${{ total_price }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Envío:</span>
+                        <span class="text-success">Gratis</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong>${{ total_price }}</strong>
+                    </div>
+                    
+                    <button class="btn btn-success btn-lg w-100 mb-2">
+                        <i class="fas fa-credit-card"></i> Proceder al Pago
+                    </button>
+                    
+                    <a href="{% url 'tienda:index' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-arrow-left"></i> Seguir Comprando
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle"></i> Información de Compra
+                    </h6>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-truck text-success"></i> Envío gratis en compras superiores a $50</li>
+                        <li><i class="fas fa-undo text-primary"></i> 30 días para devoluciones</li>
+                        <li><i class="fas fa-shield-alt text-warning"></i> Compra 100% segura</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Auto-actualizar carrito cuando cambie la cantidad
+document.addEventListener('DOMContentLoaded', function() {
+    const cantidadInputs = document.querySelectorAll('input[name="cantidad"]');
+    
+    cantidadInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value <= 0) {
+                if (confirm('¿Eliminar este producto del carrito?')) {
+                    this.closest('form').submit();
+                } else {
+                    this.value = this.dataset.original || 1;
+                }
+            }
+        });
+        
+        // Guardar valor original
+        input.dataset.original = input.value;
+    });
+});
+</script>
+{% endblock %}
