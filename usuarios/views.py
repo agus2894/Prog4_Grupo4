@@ -14,16 +14,13 @@ class UserListCreate(generics.ListCreateAPIView):
     serializer_class = UserSerializer
 
 
-def register(request):
-    """Registro simple unificado"""
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, f'¡Bienvenido {user.username}! Tu cuenta ha sido creada.')
-            return redirect('tienda:index')
-    else:
-        form = UserCreationForm()
-    
-    return render(request, 'registration/signup.html', {'form': form})
+# usuarios/views.py
+from rest_framework import generics
+from django.contrib.auth.models import User
+from .serializers import UserSerializer
+
+
+class UserListCreate(generics.ListCreateAPIView):
+    """API para listar y crear usuarios"""
+    queryset = User.objects.all()
+    serializer_class = UserSerializer

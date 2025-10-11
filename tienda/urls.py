@@ -7,15 +7,11 @@ from .views import (
     ver_carrito, agregar_al_carrito, actualizar_carrito,
     eliminar_del_carrito, vaciar_carrito, carrito_count
 )
-from .debug_views import debug_user
 
 app_name = "tienda"
 
 urlpatterns = [
     path("", tienda_index, name="index"),
-    
-    # Vista temporal de debug
-    path("debug/", debug_user, name="debug_user"),
     
     # Dashboard de vendedor (CRUD)
     path("dashboard/", ProductoListView.as_view(), name="dashboard_list"),
