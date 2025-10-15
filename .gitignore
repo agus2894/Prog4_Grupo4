@@ -1,50 +1,104 @@
-# Archivos de entorno
+# ============================================
+# CONFIGURACIÓN PARA PROYECTO DJANGO ACADÉMICO
+# ============================================
+
+# Archivos de entorno (NUNCA subir credenciales)
 .env
 .env.local
 .env.*.local
+.env.production
 
-# Entornos virtuales Python
+# Entornos virtuales Python (cada uno crea el suyo)
 venv/
 .venv/
 env/
 ENV/
+env.bak/
+venv.bak/
 
-# Archivos de cache Python
+# Archivos de cache Python (se regeneran automáticamente)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+*.py[cod]
+*$py.class
 
-# Base de datos
+# Base de datos local (cada uno tendrá su propia BD)
 db.sqlite3
+db.sqlite3-journal
 *.db
 
-# Archivos de medios subidos
+# Archivos de medios subidos por usuarios
 media/
+uploads/
 
-# Archivos estáticos recolectados
+# Archivos estáticos recolectados (se regeneran con collectstatic)
 /static/
 staticfiles/
+/staticfiles/
 
-# Logs
+# Logs y archivos temporales
 *.log
+*.tmp
+*.temp
 
 # Archivos de sistema
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# IDE
+# IDEs y editores
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.pydevproject
 
-# Migraciones (excepto __init__.py)
-**/migrations/*
-!**/migrations/__init__.py
-
-# Coverage reports
+# Testing (como no han visto testing todavía)
 htmlcov/
 .coverage
 .coverage.*
+.pytest_cache/
+.tox/
+
+# Archivos de distribución
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Documentación generada
+docs/_build/
+
+# ============================================
+# LO QUE SÍ SE DEBE SUBIR (para reproducción):
+# ============================================
+# - Código fuente (.py)
+# - Templates (.html)
+# - Archivos estáticos del proyecto (CSS, JS, imágenes)
+# - requirements.txt
+# - manage.py
+# - settings.py (sin credenciales sensibles)
+# - URLs y configuración
+# - Migraciones (¡IMPORTANTES para reproducir la BD!)
+# - README.md
+# ============================================
