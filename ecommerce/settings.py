@@ -3,23 +3,22 @@ from pathlib import Path
 import environ
 import dj_database_url
 
-# --- Paths base ---
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- Cargar variables de entorno ---
+
 env = environ.Env(
     DEBUG=(bool, True)
 )
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-# --- Seguridad ---
+
 SECRET_KEY = env("SECRET_KEY", default="dev-secret-no-usar-en-prod")
 DEBUG = env("DEBUG", default=True)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
-# --- Apps instaladas ---
+
 INSTALLED_APPS = [
-    # Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -27,8 +26,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-
-    # Terceros
     "rest_framework",
     "drf_yasg",
     "allauth",
@@ -36,33 +33,30 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.github",
-
-    # Apps propias
     "tienda",
     "usuarios",
     "simple_chat",
     'presupuesto',
-    'telegram_bot',
 ]
 
 SITE_ID = 1
 
-# --- Autenticación ---
+
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
-# Redirecciones después de login/logout
-LOGIN_REDIRECT_URL = "home"  # después de iniciar sesión
-LOGOUT_REDIRECT_URL = "home"                     # después de cerrar sesión
 
-# Configuración de allauth
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+
+
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
-# --- Middleware ---
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -75,10 +69,10 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
-# --- URLS ---
+
 ROOT_URLCONF = "ecommerce.urls"
 
-# --- Templates ---
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -95,10 +89,10 @@ TEMPLATES = [
     },
 ]
 
-# --- WSGI ---
+
 WSGI_APPLICATION = "ecommerce.wsgi.application"
 
-# --- Base de datos ---
+
 DATABASES = {
     "default": dj_database_url.config(
         default=env("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
@@ -106,7 +100,7 @@ DATABASES = {
     )
 }
 
-# --- Validadores de contraseña ---
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -114,25 +108,25 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# --- Internacionalización ---
+
 LANGUAGE_CODE = "es"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# --- Archivos estáticos ---
+
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# --- Media ---
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# --- Default primary key ---
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# --- Config social login ---
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {

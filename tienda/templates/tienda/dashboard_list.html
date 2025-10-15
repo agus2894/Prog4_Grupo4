@@ -25,6 +25,7 @@
                     <table class="table table-hover">
                         <thead class="table-dark">
                             <tr>
+                                <th><i class="fas fa-image"></i> Imagen</th>
                                 <th><i class="fas fa-tag"></i> Título</th>
                                 <th><i class="fas fa-industry"></i> Marca</th>
                                 <th><i class="fas fa-dollar-sign"></i> Precio</th>
@@ -37,6 +38,13 @@
                         <tbody>
                             {% for producto in productos %}
                                 <tr>
+                                    <td>
+                                        {% if producto.image %}
+                                            <img src="{{ producto.image.url }}" alt="{{ producto.title }}" class="img-thumbnail" style="max-width: 50px; max-height: 50px; object-fit: cover;">
+                                        {% else %}
+                                            <img src="https://via.placeholder.com/50x50.png?text=No" alt="Sin imagen" class="img-thumbnail" style="max-width: 50px;">
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <strong>{{ producto.title }}</strong>
                                         {% if producto.description %}

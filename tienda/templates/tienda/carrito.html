@@ -27,7 +27,14 @@
                     {% if items %}
                         {% for item in items %}
                         <div class="row align-items-center border-bottom py-3">
-                            <div class="col-md-6">
+                            <div class="col-md-2 text-center">
+                                {% if item.producto.image %}
+                                    <img src="{{ item.producto.image.url }}" alt="{{ item.producto.title }}" class="img-thumbnail" style="max-width: 80px; max-height: 80px; object-fit: cover;">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/80x80.png?text=Sin+Imagen" alt="Sin imagen" class="img-thumbnail" style="max-width: 80px;">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
                                 <h6 class="mb-1">{{ item.producto.title }}</h6>
                                 <small class="text-muted">{{ item.producto.marca }}</small>
                                 <p class="mb-1 text-truncate">{{ item.producto.description|truncatewords:10 }}</p>
@@ -98,9 +105,13 @@
                         <strong>${{ total_price }}</strong>
                     </div>
                     
-                    <button class="btn btn-success btn-lg w-100 mb-2">
-                        <i class="fas fa-credit-card"></i> Proceder al Pago
-                    </button>
+                    <a href="{% url 'tienda:checkout' %}" class="btn btn-success btn-lg w-100 mb-2">
+                        <i class="fas fa-check-circle"></i> Finalizar Compra
+                    </a>
+                    
+                    <a href="{% url 'presupuesto:generar' %}" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-file-pdf"></i> Generar Presupuesto PDF
+                    </a>
                     
                     <a href="{% url 'tienda:index' %}" class="btn btn-outline-primary w-100">
                         <i class="fas fa-arrow-left"></i> Seguir Comprando

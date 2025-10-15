@@ -1,0 +1,92 @@
+{% extends 'tienda/base.html' %}
+{% load static %}
+
+{% block title %}Presupuesto #{{ presupuesto.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-invoice"></i> Presupuesto #{{ presupuesto.id }}
+                    </h4>
+                    <div>
+                        <a href="{% url 'presupuesto:descargar_pdf' presupuesto.id %}" 
+                           class="btn btn-danger">
+                            <i class="fas fa-file-pdf"></i> Descargar PDF
+                        </a>
+                        <a href="{% url 'presupuesto:lista' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Información del presupuesto -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Cliente:</strong> {{ presupuesto.user.get_full_name|default:presupuesto.user.username }}</p>
+                            <p><strong>Email:</strong> {{ presupuesto.user.email }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <p><strong>Fecha:</strong> {{ presupuesto.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Estado:</strong> 
+                                {% if presupuesto.estado == 'pendiente' %}
+                                    <span class="badge bg-warning">{{ presupuesto.get_estado_display }}</span>
+                                {% elif presupuesto.estado == 'enviado' %}
+                                    <span class="badge bg-info">{{ presupuesto.get_estado_display }}</span>
+                                {% elif presupuesto.estado == 'aceptado' %}
+                                    <span class="badge bg-success">{{ presupuesto.get_estado_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ presupuesto.get_estado_display }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Tabla de productos -->
+                    <h5 class="mb-3">Productos</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in presupuesto.items.all %}
+                                <tr>
+                                    <td>{{ item.producto.title }}</td>
+                                    <td class="text-center">{{ item.cantidad }}</td>
+                                    <td class="text-end">${{ item.precio_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">${{ item.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
+                                    <td class="text-end"><strong>${{ presupuesto.total|floatformat:2 }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    {% if presupuesto.notas %}
+                    <hr>
+                    <h5>Notas</h5>
+                    <p class="text-muted">{{ presupuesto.notas }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

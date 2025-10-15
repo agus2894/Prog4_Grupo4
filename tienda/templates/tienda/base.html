@@ -43,6 +43,18 @@
                             </a>
                         </li>
                         
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'tienda:mis_pedidos' %}">
+                                <i class="fas fa-box"></i> Mis Pedidos
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'presupuesto:lista' %}">
+                                <i class="fas fa-file-invoice"></i> Presupuestos
+                            </a>
+                        </li>
+                        
                         {% if user.profile.is_admin %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'tienda:dashboard_list' %}">

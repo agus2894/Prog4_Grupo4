@@ -7,13 +7,14 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'is_admin')
     list_filter = ('is_admin',)
     search_fields = ('user__username', 'user__email')
-    list_editable = ('is_admin',)  # Permite editar is_admin directamente desde la lista
+    list_editable = ('is_admin',)
 
-# Mejorar el admin de User para mostrar el perfil
+
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = 'Perfil'
+
 
 class CustomUserAdmin(admin.ModelAdmin):
     inlines = (ProfileInline,)
@@ -25,6 +26,6 @@ class CustomUserAdmin(admin.ModelAdmin):
     get_is_admin.short_description = 'Es Admin Tienda'
     get_is_admin.boolean = True
 
-# Re-registrar User con la configuración personalizada
+
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)

@@ -4,7 +4,7 @@ from .models import Producto
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
-        fields = ["title", "description", "marca", "price", "stock", "active"]
+        fields = ["title", "description", "marca", "price", "stock", "image", "active"]
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -30,6 +30,10 @@ class ProductoForm(forms.ModelForm):
                 'min': '0',
                 'placeholder': 'Cantidad disponible'
             }),
+            'image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
             'active': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             })
@@ -40,5 +44,6 @@ class ProductoForm(forms.ModelForm):
             'marca': 'Marca',
             'price': 'Precio (€)',
             'stock': 'Stock Disponible',
+            'image': 'Imagen del Producto',
             'active': 'Producto Activo'
         }

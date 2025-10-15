@@ -1,4 +1,3 @@
-# tienda/views.py
 from rest_framework import viewsets, permissions
 from .models import Producto, Carrito, CarritoItem
 from .serializers import ProductoSerializer
@@ -15,14 +14,12 @@ from django.db import transaction
 from .forms import ProductoForm
 
 
-# API
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
     permission_classes = [permissions.AllowAny]
 
 
-# Decorador simple para admin
 def admin_required(user):
     return user.is_authenticated and hasattr(user, 'profile') and user.profile.is_admin
 
@@ -35,7 +32,6 @@ def redirect_dashboard(request):
         return redirect("tienda:index")
 
 
-# CRUD simplificado (solo admin)
 @method_decorator([login_required, user_passes_test(admin_required)], name="dispatch")
 class ProductoListView(ListView):
     model = Producto
@@ -83,12 +79,52 @@ class ProductoDeleteView(DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-# Catálogo público
 def tienda_index(request):
     productos_list = Producto.objects.filter(active=True, stock__gt=0)
-    paginator = Paginator(productos_list, 12)
     
+    search_query = request.GET.get('search', '')
+    marca_filter = request.GET.get('marca', '')
+    precio_min = request.GET.get('precio_min', '')
+    precio_max = request.GET.get('precio_max', '')
+    orden = request.GET.get('orden', '')
+    
+    if search_query:
+        from django.db.models import Q
+        productos_list = productos_list.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(marca__icontains=search_query)
+        )
+    
+    if marca_filter:
+        productos_list = productos_list.filter(marca__iexact=marca_filter)
+    
+    if precio_min:
+        try:
+            productos_list = productos_list.filter(price__gte=float(precio_min))
+        except ValueError:
+            pass
+    
+    if precio_max:
+        try:
+            productos_list = productos_list.filter(price__lte=float(precio_max))
+        except ValueError:
+            pass
+    
+    if orden == 'precio_asc':
+        productos_list = productos_list.order_by('price')
+    elif orden == 'precio_desc':
+        productos_list = productos_list.order_by('-price')
+    elif orden == 'recientes':
+        productos_list = productos_list.order_by('-created_at')
+    elif orden == 'nombre':
+        productos_list = productos_list.order_by('title')
+    
+    marcas_disponibles = Producto.objects.filter(active=True, stock__gt=0).values_list('marca', flat=True).distinct().order_by('marca')
+    
+    paginator = Paginator(productos_list, 12)
     page = request.GET.get('page')
+    
     try:
         productos = paginator.page(page)
     except PageNotAnInteger:
@@ -96,10 +132,20 @@ def tienda_index(request):
     except EmptyPage:
         productos = paginator.page(paginator.num_pages)
     
-    return render(request, "tienda/index.html", {"productos": productos})
+    context = {
+        'productos': productos,
+        'search_query': search_query,
+        'marca_filter': marca_filter,
+        'precio_min': precio_min,
+        'precio_max': precio_max,
+        'orden': orden,
+        'marcas_disponibles': marcas_disponibles,
+        'total_resultados': paginator.count,
+    }
+    
+    return render(request, "tienda/index.html", context)
 
 
-# === CARRITO ===
 def get_or_create_carrito(user):
     carrito, created = Carrito.objects.get_or_create(user=user)
     return carrito
@@ -187,3 +233,92 @@ def vaciar_carrito(request):
 def carrito_count(request):
     carrito = get_or_create_carrito(request.user)
     return JsonResponse({'count': carrito.total_items})
+
+
+@login_required
+def checkout(request):
+    carrito = get_or_create_carrito(request.user)
+    items = carrito.items.select_related('producto').all()
+    
+    if not items.exists():
+        messages.error(request, 'Tu carrito está vacío')
+        return redirect('tienda:ver_carrito')
+    
+    if request.method == 'POST':
+        direccion_envio = request.POST.get('direccion_envio', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        notas = request.POST.get('notas', '').strip()
+        
+        if not direccion_envio:
+            messages.error(request, 'La dirección de envío es obligatoria')
+            return render(request, 'tienda/checkout.html', {
+                'carrito': carrito,
+                'items': items,
+                'total_price': carrito.total_price,
+            })
+        
+        try:
+            with transaction.atomic():
+                for item in items:
+                    if item.cantidad > item.producto.stock:
+                        raise ValueError(f'Stock insuficiente para {item.producto.title}')
+                
+                from .models import Pedido, PedidoItem
+                pedido = Pedido.objects.create(
+                    user=request.user,
+                    total=carrito.total_price,
+                    direccion_envio=direccion_envio,
+                    telefono=telefono,
+                    notas=notas,
+                    estado='pendiente'
+                )
+                
+                for item in items:
+                    PedidoItem.objects.create(
+                        pedido=pedido,
+                        producto=item.producto,
+                        cantidad=item.cantidad,
+                        precio_unitario=item.producto.price
+                    )
+                    
+                    item.producto.stock -= item.cantidad
+                    item.producto.save()
+                
+                carrito.clear()
+                
+                messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente!')
+                return redirect('tienda:pedido_detalle', pedido_id=pedido.id)
+                
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('tienda:ver_carrito')
+        except Exception as e:
+            messages.error(request, 'Error al procesar el pedido. Intenta nuevamente.')
+            return redirect('tienda:ver_carrito')
+    
+    context = {
+        'carrito': carrito,
+        'items': items,
+        'total_price': carrito.total_price,
+    }
+    return render(request, 'tienda/checkout.html', context)
+
+
+@login_required
+def mis_pedidos(request):
+    from .models import Pedido
+    pedidos = Pedido.objects.filter(user=request.user).prefetch_related('items__producto')
+    return render(request, 'tienda/mis_pedidos.html', {'pedidos': pedidos})
+
+
+@login_required
+def pedido_detalle(request, pedido_id):
+    from .models import Pedido
+    pedido = get_object_or_404(Pedido, id=pedido_id, user=request.user)
+    items = pedido.items.select_related('producto').all()
+    
+    context = {
+        'pedido': pedido,
+        'items': items,
+    }
+    return render(request, 'tienda/pedido_detalle.html', context)

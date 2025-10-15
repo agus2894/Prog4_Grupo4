@@ -9,7 +9,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 
-# --- Swagger / Redoc ---
+
 schema_view = get_schema_view(
     openapi.Info(
         title="Mi API",
@@ -20,41 +20,24 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-# --- Router DRF ---
+
 router = routers.DefaultRouter()
 router.register(r'productos', ProductoViewSet, basename='producto')
 
-# --- URLs ---
+
 urlpatterns = [
-    # Admin
     path("admin/", admin.site.urls),
-
-    # API de productos
     path("api/", include(router.urls)),
-
-    # Autenticación con allauth
     path("accounts/", include("allauth.urls")),
-
-    # Dashboards
     path("redirect-dashboard/", redirect_dashboard, name="redirect_dashboard"),
-
-    # Documentación API
     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
-
-    # Página de inicio
     path("", TemplateView.as_view(template_name="tienda/home.html"), name="home"),
-
-    # URLs de la app tienda
     path("tienda/", include("tienda.urls")),
-    
-    # URLs de la app usuarios
-    path("usuarios/", include("usuarios.urls")),
-    
-    # URLs de la app simple_chat
     path("simple_chat/", include("simple_chat.urls")),
+    path("presupuesto/", include("presupuesto.urls")),
 ]
 
-# Servir archivos de medios en desarrollo
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

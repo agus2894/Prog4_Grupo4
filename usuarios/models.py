@@ -12,7 +12,6 @@ class Profile(models.Model):
         return f"{self.user.username} ({'Admin' if self.is_admin else 'Comprador'})"
     
     def save(self, *args, **kwargs):
-        # Sincronizar permisos de Django
         super().save(*args, **kwargs)
         if self.is_admin:
             self.user.is_staff = True
@@ -20,7 +19,6 @@ class Profile(models.Model):
         else:
             self.user.is_staff = False
             self.user.is_superuser = False
-        # Evitar recursión infinita: usar update() en lugar de save()
         User.objects.filter(pk=self.user.pk).update(
             is_staff=self.user.is_staff,
             is_superuser=self.user.is_superuser

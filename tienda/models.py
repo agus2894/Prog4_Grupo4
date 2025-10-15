@@ -91,3 +91,48 @@ class CarritoItem(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class Pedido(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('procesando', 'Procesando'),
+        ('enviado', 'Enviado'),
+        ('entregado', 'Entregado'),
+        ('cancelado', 'Cancelado'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pedidos")
+    fecha_pedido = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    direccion_envio = models.TextField(blank=True)
+    telefono = models.CharField(max_length=20, blank=True)
+    notas = models.TextField(blank=True)
+    
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Pedido #{self.id} - {self.user.username} - {self.estado}"
+    
+    class Meta:
+        ordering = ['-fecha_pedido']
+        indexes = [
+            models.Index(fields=['user', '-fecha_pedido']),
+            models.Index(fields=['estado']),
+        ]
+
+
+class PedidoItem(models.Model):
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="items")
+    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
+    cantidad = models.PositiveIntegerField()
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    def __str__(self):
+        return f"{self.cantidad}x {self.producto.title} (Pedido #{self.pedido.id})"
+    
+    @property
+    def subtotal(self):
+        return self.cantidad * self.precio_unitario
