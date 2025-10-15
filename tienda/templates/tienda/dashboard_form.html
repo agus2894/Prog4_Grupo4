@@ -1,13 +1,91 @@
 {% extends "tienda/base.html" %}
 {% block content %}
 <div class="container mt-4">
-    <h2>{% if object %}Editar{% else %}Nuevo{% endif %} Producto</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-{% if object %}edit{% else %}plus{% endif %}"></i>
+                        {% if object %}Editar Producto{% else %}Nuevo Producto{% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Guardar</button>
-        <a href="{% url 'tienda:dashboard_list' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.marca.id_for_label }}" class="form-label">{{ form.marca.label }}</label>
+                                    {{ form.marca }}
+                                    {% if form.marca.errors %}
+                                        <div class="text-danger">{{ form.marca.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
+                                    {{ form.price }}
+                                    {% if form.price.errors %}
+                                        <div class="text-danger">{{ form.price.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.stock.id_for_label }}" class="form-label">{{ form.stock.label }}</label>
+                                    {{ form.stock }}
+                                    {% if form.stock.errors %}
+                                        <div class="text-danger">{{ form.stock.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.active }}
+                                        <label for="{{ form.active.id_for_label }}" class="form-check-label">{{ form.active.label }}</label>
+                                    </div>
+                                    {% if form.active.errors %}
+                                        <div class="text-danger">{{ form.active.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'tienda:dashboard_list' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Guardar Producto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

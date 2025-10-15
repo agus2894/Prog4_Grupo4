@@ -45,6 +45,10 @@ urlpatterns = [
 
     # URLs de la app tienda
     path("tienda/", include("tienda.urls")),
+    
+    # URLs de la app usuarios
+    path("usuarios/", include("usuarios.urls")),
+    
     # URLs de la app simple_chat
     path("simple_chat/", include("simple_chat.urls")),
 ]

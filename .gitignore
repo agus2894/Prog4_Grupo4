@@ -1,10 +1,50 @@
+# Archivos de entorno
 .env
+.env.local
+.env.*.local
+
+# Entornos virtuales Python
 venv/
-__pycache__/
-# Archivos de caché de Python
+.venv/
+env/
+ENV/
+
+# Archivos de cache Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 
-# Archivos de migraciones de Django
+# Base de datos
+db.sqlite3
+*.db
+
+# Archivos de medios subidos
+media/
+
+# Archivos estáticos recolectados
+/static/
+staticfiles/
+
+# Logs
+*.log
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Migraciones (excepto __init__.py)
 **/migrations/*
 !**/migrations/__init__.py
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*

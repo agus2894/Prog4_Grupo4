@@ -1,42 +1,152 @@
 {% extends "tienda/base.html" %}
+{% block title %}Dashboard de Vendedor{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h2>Dashboard de Vendedor</h2>
-
-    <!-- Botón para abrir el chat -->
-    <a href="{% url 'simple_chat:chat' %}" class="btn btn-primary mb-3">💬 Abrir Chat</a>
-
-    <!-- Botón para crear producto -->
-    <a href="{% url 'tienda:dashboard_create' %}" class="btn btn-success mb-3">+ Nuevo Producto</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-tachometer-alt"></i> Dashboard de Administrador</h2>
+        <div>
+            <a href="{% url 'tienda:dashboard_create' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nuevo Producto
+            </a>
+        </div>
+    </div>
 
     {% if productos %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Título</th>
-                    <th>Marca</th>
-                    <th>Precio</th>
-                    <th>Stock</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for producto in productos %}
-                    <tr>
-                        <td>{{ producto.title }}</td>
-                        <td>{{ producto.marca }}</td>
-                        <td>${{ producto.price }}</td>
-                        <td>{{ producto.stock }}</td>
-                        <td>
-                            <a href="{% url 'tienda:dashboard_update' producto.pk %}" class="btn btn-warning btn-sm">Editar</a>
-                            <a href="{% url 'tienda:dashboard_delete' producto.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
-                        </td>
-                    </tr>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-boxes"></i> Mis Productos 
+                    <span class="badge bg-primary">{{ productos.paginator.count }} total</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><i class="fas fa-tag"></i> Título</th>
+                                <th><i class="fas fa-industry"></i> Marca</th>
+                                <th><i class="fas fa-dollar-sign"></i> Precio</th>
+                                <th><i class="fas fa-warehouse"></i> Stock</th>
+                                <th><i class="fas fa-toggle-on"></i> Estado</th>
+                                <th><i class="fas fa-calendar"></i> Creado</th>
+                                <th><i class="fas fa-cogs"></i> Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ producto.title }}</strong>
+                                        {% if producto.description %}
+                                            <br><small class="text-muted">{{ producto.description|truncatewords:8 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ producto.marca }}</td>
+                                    <td>
+                                        <span class="fw-bold text-success">${{ producto.price }}</span>
+                                    </td>
+                                    <td>
+                                        {% if producto.stock > 0 %}
+                                            <span class="badge bg-success">{{ producto.stock }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Sin stock</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if producto.active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ producto.created_at|date:"d/m/Y" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'tienda:dashboard_update' producto.pk %}" 
+                                               class="btn btn-outline-warning btn-sm" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'tienda:dashboard_delete' producto.pk %}" 
+                                               class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        {% if productos.has_other_pages %}
+        <nav aria-label="Paginación del dashboard" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if productos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.previous_page_number }}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in productos.paginator.page_range %}
+                    {% if productos.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > productos.number|add:'-3' and num < productos.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
+
+                {% if productos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.next_page_number }}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.paginator.num_pages }}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+            
+            <div class="text-center text-muted">
+                <small>
+                    Página {{ productos.number }} de {{ productos.paginator.num_pages }} 
+                    (Mostrando {{ productos.start_index }}-{{ productos.end_index }} de {{ productos.paginator.count }} productos)
+                </small>
+            </div>
+        </nav>
+        {% endif %}
+
     {% else %}
-        <p>No hay productos todavía.</p>
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No tienes productos todavía</h4>
+                <p class="text-muted">¡Crea tu primer producto para comenzar a vender!</p>
+                <a href="{% url 'tienda:dashboard_create' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus"></i> Crear Mi Primer Producto
+                </a>
+            </div>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

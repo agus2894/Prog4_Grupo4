@@ -28,15 +28,47 @@
                             <p class="card-text text-muted">{{ producto.description|truncatewords:20 }}</p>
                             <ul class="list-unstyled small">
                                 <li><strong>Marca:</strong> {{ producto.marca }}</li>
-                                <li><strong>Precio:</strong> ${{ producto.price }}</li>
-                                <li><strong>Stock:</strong> {{ producto.stock }}</li>
+                                <li><strong>Precio:</strong> €{{ producto.price }}</li>
+                                <li>
+                                    <strong>Stock:</strong> 
+                                    {% if producto.stock > 0 %}
+                                        <span class="text-success">{{ producto.stock }} disponibles</span>
+                                    {% else %}
+                                        <span class="text-danger">Sin stock</span>
+                                    {% endif %}
+                                </li>
                             </ul>
                         </div>
 
-                        <div class="card-footer bg-white text-center">
-                            <button class="btn btn-success w-100 rounded-pill fw-semibold">
-                                Comprar ahora
-                            </button>
+                        <div class="card-footer bg-white">
+                            {% if user.is_authenticated %}
+                                {% if producto.stock > 0 %}
+                                    <form method="post" action="{% url 'tienda:agregar_al_carrito' producto.id %}" class="mb-2">
+                                        {% csrf_token %}
+                                        <div class="input-group mb-2">
+                                            <input type="number" name="cantidad" value="1" min="1" max="{{ producto.stock }}" 
+                                                   class="form-control" placeholder="Cantidad">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-cart-plus"></i> Agregar
+                                            </button>
+                                        </div>
+                                    </form>
+                                    <button class="btn btn-outline-success w-100 rounded-pill fw-semibold">
+                                        <i class="fas fa-shopping-bag"></i> Comprar ahora
+                                    </button>
+                                {% else %}
+                                    <div class="alert alert-warning text-center">
+                                        <i class="fas fa-exclamation-triangle"></i> Producto sin stock
+                                    </div>
+                                    <button class="btn btn-secondary w-100 rounded-pill fw-semibold" disabled>
+                                        <i class="fas fa-times"></i> No disponible
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'account_login' %}" class="btn btn-primary w-100 rounded-pill fw-semibold">
+                                    Inicia sesión para comprar
+                                </a>
+                            {% endif %}
                             <p class="mt-2 text-muted small mb-0">
                                 Publicado el {{ producto.created_at|date:"d/m/Y" }}
                             </p>
@@ -45,6 +77,58 @@
                 </div>
             {% endfor %}
         </div>
+
+        <!-- Paginación -->
+        {% if productos.has_other_pages %}
+        <nav aria-label="Paginación de productos" class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if productos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">
+                            <i class="fas fa-angle-double-left"></i> Primera
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.previous_page_number }}">
+                            <i class="fas fa-angle-left"></i> Anterior
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in productos.paginator.page_range %}
+                    {% if productos.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > productos.number|add:'-3' and num < productos.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if productos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.next_page_number }}">
+                            Siguiente <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ productos.paginator.num_pages }}">
+                            Última <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+            
+            <div class="text-center text-muted">
+                <small>
+                    Página {{ productos.number }} de {{ productos.paginator.num_pages }} 
+                    ({{ productos.paginator.count }} productos en total)
+                </small>
+            </div>
+        </nav>
+        {% endif %}
     {% else %}
         <!-- Mensaje cuando no hay productos -->
         <div class="text-center py-5">

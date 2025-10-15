@@ -1,92 +1,154 @@
 {% extends "tienda/base.html" %}
 
 {% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-comments"></i> Chat del Mercadito
+                    </h4>
+                    <small>Conversa con otros usuarios en tiempo real</small>
+                </div>
+                
+                <div class="card-body p-0">
+                    <div id="chat-box" style="height: 400px; overflow-y: auto; padding: 15px; background-color: #f8f9fa;">
+                        <!-- Los mensajes aparecerán aquí -->
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    {% if user.is_authenticated %}
+                        <form id="chat-form" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <textarea id="chat-text" rows="2" 
+                                     class="form-control" 
+                                     placeholder="Escribe tu mensaje aquí..." 
+                                     maxlength="500"></textarea>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane"></i><br>
+                                <small>Enviar</small>
+                            </button>
+                        </form>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Conectado como <strong>{{ user.username }}</strong>
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <p class="mb-2">Debes iniciar sesión para participar en el chat</p>
+                            <a href="{% url 'account_login' %}" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<h2>Chat del Mercadito</h2>
-
-<div id="chat-box" style="height: 300px; overflow:auto; border:1px solid #ddd; padding:10px;"></div>
-
-<form id="chat-form">
-
-{% csrf_token %}
-
-<textarea id="chat-text" rows="2" style="width:100%"></textarea>
-
-<button type="submit" class="btn-primary">Enviar</button>
-
-</form>
-
+{% if user.is_authenticated %}
 <script>
-
 let lastId = 0;
-
 const box = document.getElementById("chat-box");
 
-function renderMessage(m){
-
-const el = document.createElement("div");
-
-el.innerHTML = `<strong>${m.user}</strong>: ${m.text} <small style="color:#999">${new Date(m.created_at).toLocaleTimeString()}</small>`;
-
-box.appendChild(el);
-
-box.scrollTop = box.scrollHeight;
-
+function renderMessage(m) {
+    const el = document.createElement("div");
+    el.className = "mb-3 p-2 border-bottom";
+    
+    const isCurrentUser = m.user === "{{ user.username }}";
+    const messageClass = isCurrentUser ? "text-end" : "text-start";
+    const badgeClass = isCurrentUser ? "bg-primary" : "bg-secondary";
+    
+    el.innerHTML = `
+        <div class="${messageClass}">
+            <span class="badge ${badgeClass}">
+                <i class="fas fa-user"></i> ${m.user}
+            </span>
+            <small class="text-muted ms-2">
+                ${new Date(m.created_at).toLocaleTimeString()}
+            </small>
+        </div>
+        <div class="${messageClass} mt-1">
+            <span class="bg-light p-2 rounded d-inline-block" style="max-width: 70%;">
+                ${m.text}
+            </span>
+        </div>
+    `;
+    
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
 }
 
-async function poll(){
-
-const res = await fetch("{% url 'simple_chat:messages-api' %}?after_id=" + lastId);
-
-const data = await res.json();
-
-data.messages.forEach(m => {
-
-renderMessage(m);
-
-lastId = Math.max(lastId, m.id);
-
-});
-
+async function poll() {
+    try {
+        const res = await fetch("{% url 'simple_chat:messages-api' %}?after_id=" + lastId);
+        const data = await res.json();
+        
+        data.messages.forEach(m => {
+            renderMessage(m);
+            lastId = Math.max(lastId, m.id);
+        });
+    } catch (error) {
+        console.error('Error al cargar mensajes:', error);
+    }
 }
 
-setInterval(poll, 3000); // cada 3s
-
+// Polling cada 2 segundos
+setInterval(poll, 2000);
 poll();
 
-document.getElementById("chat-form").addEventListener("submit", async (e)=>{
-
-e.preventDefault();
-
-const text = document.getElementById("chat-text").value;
-
-if (!text.trim()) return;
-
-const form = new FormData();
-
-form.append("text", text);
-
-form.append("csrfmiddlewaretoken", document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-const resp = await fetch("{% url 'simple_chat:post-api' %}", {
-
-method: "POST",
-
-body: form
-
+// Enviar mensaje
+document.getElementById("chat-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const textArea = document.getElementById("chat-text");
+    const text = textArea.value.trim();
+    
+    if (!text) return;
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><br><small>Enviando...</small>';
+    
+    try {
+        const form = new FormData();
+        form.append("text", text);
+        form.append("csrfmiddlewaretoken", document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        const resp = await fetch("{% url 'simple_chat:post-api' %}", {
+            method: "POST",
+            body: form
+        });
+        
+        if (resp.ok) {
+            textArea.value = "";
+            poll(); // Cargar mensajes nuevos inmediatamente
+        } else {
+            alert('Error al enviar mensaje');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i><br><small>Enviar</small>';
+    }
 });
 
-if (resp.ok){
-
-document.getElementById("chat-text").value = "";
-
-poll(); // traer los nuevos
-
-}
-
+// Enter para enviar (Shift+Enter para nueva línea)
+document.getElementById("chat-text").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById("chat-form").dispatchEvent(new Event('submit'));
+    }
 });
-
 </script>
+{% endif %}
 
 {% endblock %}
 
