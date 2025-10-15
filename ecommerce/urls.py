@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework import routers
 from tienda.views import ProductoViewSet, redirect_dashboard
 from drf_yasg.views import get_schema_view
@@ -52,3 +54,7 @@ urlpatterns = [
     # URLs de la app simple_chat
     path("simple_chat/", include("simple_chat.urls")),
 ]
+
+# Servir archivos de medios en desarrollo
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
