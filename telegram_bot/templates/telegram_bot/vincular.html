@@ -1,0 +1,102 @@
+{% extends "tienda/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fab fa-telegram"></i> Vincular Telegram
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if user_telegram_id %}
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle"></i> ¡Telegram ya está vinculado!</h5>
+                            <p><strong>Tu Chat ID:</strong> {{ user_telegram_id }}</p>
+                            <p>Ya recibes notificaciones de presupuestos y pedidos por Telegram 🤖</p>
+                        </div>
+                        
+                        <h6>¿Quieres cambiar tu vinculación?</h6>
+                        <p class="text-muted">Puedes actualizar tu Chat ID aquí:</p>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-info-circle"></i> Vincula tu cuenta con Telegram</h5>
+                            <p>Para recibir notificaciones automáticas de presupuestos y pedidos por Telegram.</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>📱 Paso 1: Obtener tu Chat ID</h6>
+                            <ol>
+                                <li>Abre Telegram</li>
+                                <li>Busca: <code>@userinfobot</code></li>
+                                <li>Envía: <code>/start</code></li>
+                                <li>Copia tu <strong>Chat ID</strong></li>
+                            </ol>
+                            
+                            <div class="alert alert-warning">
+                                <small><i class="fas fa-exclamation-triangle"></i> <strong>Importante:</strong> El Chat ID es un número como: <code>123456789</code></small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>🔗 Paso 2: Vincular aquí</h6>
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="chat_id" class="form-label">
+                                        <i class="fab fa-telegram"></i> Tu Chat ID de Telegram
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="chat_id" 
+                                        name="chat_id" 
+                                        placeholder="Ej: 123456789"
+                                        value="{{ user_telegram_id|default:'' }}"
+                                        required
+                                    >
+                                    <div class="form-text">
+                                        Pega aquí el Chat ID que obtuviste de @userinfobot
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fab fa-telegram"></i> 
+                                    {% if user_telegram_id %}Actualizar{% else %}Vincular{% endif %} Telegram
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="bg-light p-3 rounded">
+                        <h6><i class="fas fa-bell"></i> ¿Qué notificaciones recibirás?</h6>
+                        <ul class="mb-0">
+                            <li>📋 <strong>Presupuestos:</strong> PDF adjunto cuando generes presupuestos</li>
+                            <li>🛒 <strong>Pedidos:</strong> Confirmación cuando hagas un pedido</li>
+                            <li>📦 <strong>Estados:</strong> Actualizaciones cuando tu pedido cambie de estado</li>
+                            <li>🎉 <strong>Ofertas:</strong> Promociones especiales (próximamente)</li>
+                        </ul>
+                    </div>
+                    
+                    {% if user_telegram_id %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'tienda:ver_carrito' %}" class="btn btn-success">
+                            <i class="fas fa-shopping-cart"></i> Ir al Carrito
+                        </a>
+                        <a href="{% url 'presupuesto:lista' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-file-invoice"></i> Mis Presupuestos
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

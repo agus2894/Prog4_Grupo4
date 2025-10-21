@@ -11,7 +11,70 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import transaction
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.conf import settings
 from .forms import ProductoForm
+from telegram_bot.utils import enviar_pedido_telegram
+
+
+def enviar_email_pedido(pedido, accion, request):
+    
+    try:
+        # Configurar título y mensaje según la acción
+        configuracion_emails = {
+            'creado': {
+                'titulo': '¡Tu pedido ha sido confirmado!',
+                'mensaje': 'Hemos recibido tu pedido y está siendo procesado. Te mantendremos informado sobre su estado.',
+            },
+            'procesando': {
+                'titulo': 'Tu pedido está siendo procesado',
+                'mensaje': 'Tu pedido está siendo preparado en nuestro almacén. Pronto será enviado.',
+            },
+            'enviado': {
+                'titulo': '¡Tu pedido está en camino!',
+                'mensaje': 'Tu pedido ha sido enviado y está en camino hacia tu dirección. Esperamos que lo recibas pronto.',
+            },
+            'entregado': {
+                'titulo': '¡Pedido entregado exitosamente!',
+                'mensaje': '¡Tu pedido ha sido entregado! Esperamos que disfrutes tus productos. Si tienes algún problema, contáctanos.',
+            },
+            'cancelado': {
+                'titulo': 'Tu pedido ha sido cancelado',
+                'mensaje': 'Lamentamos informarte que tu pedido ha sido cancelado. Si tienes preguntas, contáctanos.',
+            }
+        }
+        
+        config = configuracion_emails.get(accion, configuracion_emails['creado'])
+        
+        # Preparar contexto para el template
+        context = {
+            'pedido': pedido,
+            'titulo_email': config['titulo'],
+            'mensaje_email': config['mensaje'],
+            'site_url': request.build_absolute_uri('/'),
+        }
+        
+        # Renderizar template de email
+        html_content = render_to_string('emails/pedido_email.html', context)
+        
+        # Crear email
+        subject = f'[Mercadito] {config["titulo"]} - Pedido #{pedido.id}'
+        email = EmailMessage(
+            subject=subject,
+            body=html_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[pedido.user.email],
+        )
+        email.content_subtype = 'html'
+        
+        # Enviar email
+        email.send()
+        return True
+        
+    except Exception as e:
+        print(f"Error enviando email de pedido: {e}")
+        return False
 
 
 class ProductoViewSet(viewsets.ModelViewSet):
@@ -286,7 +349,24 @@ def checkout(request):
                 
                 carrito.clear()
                 
-                messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente!')
+                # Enviar notificaciones
+                email_enviado = enviar_email_pedido(pedido, 'creado', request)
+                telegram_enviado = enviar_pedido_telegram(request.user, pedido, 'creado')
+                
+                # Mensajes de confirmación
+                if email_enviado and telegram_enviado:
+                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente! Te hemos enviado confirmaciones por email y Telegram. 📧🤖')
+                elif email_enviado:
+                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente! Te hemos enviado un email de confirmación. 📧')
+                    if hasattr(request.user, 'profile') and request.user.profile.telegram_chat_id:
+                        messages.info(request, 'No se pudo enviar por Telegram. Revisa tu vinculación.')
+                elif telegram_enviado:
+                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente! Te hemos enviado confirmación por Telegram. 🤖')
+                    messages.info(request, 'No pudimos enviar el email de confirmación.')
+                else:
+                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente!')
+                    messages.info(request, 'No pudimos enviar las notificaciones, pero tu pedido está confirmado.')
+                
                 return redirect('tienda:pedido_detalle', pedido_id=pedido.id)
                 
         except ValueError as e:

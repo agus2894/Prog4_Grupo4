@@ -7,9 +7,22 @@ from django.dispatch import receiver
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_admin = models.BooleanField(default=False, help_text="Es administrador de la tienda")
+    direccion = models.CharField(max_length=255, blank=True, null=True)
+    empresa = models.CharField(max_length=100, blank=True, null=True)
+    fecha_verificacion = models.DateTimeField(blank=True, null=True)
+    role = models.CharField(max_length=20, blank=True, null=True)
+    telefono = models.CharField(max_length=20, blank=True, null=True)
+    telegram_chat_id = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True, 
+        unique=True,
+        help_text="ID del chat de Telegram para notificaciones"
+    )
     
     def __str__(self):
-        return f"{self.user.username} ({'Admin' if self.is_admin else 'Comprador'})"
+        telegram_status = "📱 Telegram" if self.telegram_chat_id else "❌ Sin Telegram"
+        return f"{self.user.username} ({'Admin' if self.is_admin else 'Comprador'}) - {telegram_status}"
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

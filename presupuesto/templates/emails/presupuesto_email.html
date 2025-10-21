@@ -1,0 +1,92 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Presupuesto #{{ presupuesto.id }} - Mercadito{% endblock %}
+
+{% block content %}
+<h2>¡Tu presupuesto está listo! 📋</h2>
+
+<p>Hola <strong>{{ presupuesto.user.get_full_name|default:presupuesto.user.username }}</strong>,</p>
+
+<p>Hemos generado tu presupuesto con todos los productos que seleccionaste. Encontrarás todos los detalles en el archivo PDF adjunto.</p>
+
+<div class="info-box">
+    <h3>📄 Detalles del Presupuesto</h3>
+    <table class="info-table">
+        <tr>
+            <th>Número de Presupuesto:</th>
+            <td><strong>#{{ presupuesto.id }}</strong></td>
+        </tr>
+        <tr>
+            <th>Fecha de Generación:</th>
+            <td>{{ presupuesto.fecha_creacion|date:"d/m/Y H:i" }}</td>
+        </tr>
+        <tr>
+            <th>Estado:</th>
+            <td>
+                {% if presupuesto.estado == 'pendiente' %}
+                    <span style="background-color: #ffc107; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ presupuesto.get_estado_display }}</span>
+                {% elif presupuesto.estado == 'enviado' %}
+                    <span style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ presupuesto.get_estado_display }}</span>
+                {% elif presupuesto.estado == 'aceptado' %}
+                    <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ presupuesto.get_estado_display }}</span>
+                {% else %}
+                    <span style="background-color: #dc3545; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ presupuesto.get_estado_display }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Cantidad de Productos:</th>
+            <td>{{ presupuesto.items.count }} items</td>
+        </tr>
+        <tr>
+            <th style="color: #198754; font-size: 16px;">Total:</th>
+            <td style="color: #198754; font-size: 16px; font-weight: bold;">${{ presupuesto.total|floatformat:2 }}</td>
+        </tr>
+    </table>
+</div>
+
+<div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="color: #198754; margin-bottom: 10px;">📦 Resumen de Productos</h3>
+    {% for item in presupuesto.items.all %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd;">
+            <span><strong>{{ item.producto.title }}</strong> x{{ item.cantidad }}</span>
+            <span style="color: #198754; font-weight: bold;">${{ item.subtotal|floatformat:2 }}</span>
+        </div>
+    {% endfor %}
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+    <p><strong>📎 Tu presupuesto en PDF está adjunto a este email</strong></p>
+    <p style="color: #666; font-size: 14px;">También puedes descargarlo desde tu cuenta en cualquier momento</p>
+</div>
+
+{% if presupuesto.notas %}
+<div class="info-box">
+    <h3>📝 Notas Adicionales</h3>
+    <p>{{ presupuesto.notas }}</p>
+</div>
+{% endif %}
+
+<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="color: #856404; margin-bottom: 10px;">⏰ Información Importante</h3>
+    <ul style="margin: 0; padding-left: 20px; color: #856404;">
+        <li>Este presupuesto tiene <strong>validez de 30 días</strong></li>
+        <li>Los precios incluyen todos los impuestos</li>
+        <li>Envío gratuito en compras superiores a $50</li>
+        <li>Garantía de 12 meses en todos los productos</li>
+    </ul>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ site_url }}" class="btn" style="color: white; text-decoration: none;">
+        🛒 Visitar Nuestra Tienda
+    </a>
+</div>
+
+<p>Si tienes alguna pregunta sobre este presupuesto o deseas realizar modificaciones, no dudes en contactarnos.</p>
+
+<p style="margin-top: 25px;">
+    <strong>¡Gracias por elegir Mercadito!</strong><br>
+    El equipo de ventas
+</p>
+{% endblock %}

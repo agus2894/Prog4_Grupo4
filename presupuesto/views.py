@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib import messages
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.conf import settings
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -12,42 +15,57 @@ from io import BytesIO
 from datetime import datetime
 from tienda.models import Carrito
 from .models import Presupuesto, PresupuestoItem
+from telegram_bot.utils import enviar_presupuesto_telegram
 
 
-@login_required
-def generar_presupuesto_desde_carrito(request):
+def enviar_email_presupuesto(presupuesto, request):
+    """
+    Envía un email con el presupuesto en PDF adjunto
+    """
     try:
-        carrito = Carrito.objects.get(user=request.user)
-        items_carrito = carrito.items.select_related('producto').all()
+        # Generar PDF en memoria
+        pdf_buffer = generar_pdf_presupuesto(presupuesto, request)
         
-        if not items_carrito.exists():
-            messages.warning(request, 'Tu carrito está vacío. Agrega productos antes de generar un presupuesto.')
-            return redirect('tienda:ver_carrito')
+        # Preparar contexto para el template
+        context = {
+            'presupuesto': presupuesto,
+            'site_url': request.build_absolute_uri('/'),
+        }
         
-        presupuesto = Presupuesto.objects.create(user=request.user)
+        # Renderizar template de email
+        html_content = render_to_string('emails/presupuesto_email.html', context)
         
-        for item in items_carrito:
-            PresupuestoItem.objects.create(
-                presupuesto=presupuesto,
-                producto=item.producto,
-                cantidad=item.cantidad,
-                precio_unitario=item.producto.price,
-            )
+        # Crear email
+        subject = f'[Mercadito] Tu Presupuesto #{presupuesto.id} está listo'
+        email = EmailMessage(
+            subject=subject,
+            body=html_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[presupuesto.user.email],
+        )
+        email.content_subtype = 'html'
         
-        presupuesto.calcular_total()
+        # Adjuntar PDF
+        pdf_buffer.seek(0)
+        email.attach(
+            f'presupuesto_{presupuesto.id}.pdf',
+            pdf_buffer.read(),
+            'application/pdf'
+        )
         
-        messages.success(request, f'Presupuesto #{presupuesto.id} generado exitosamente.')
-        return redirect('presupuesto:descargar_pdf', presupuesto_id=presupuesto.id)
+        # Enviar email
+        email.send()
+        return True
         
-    except Carrito.DoesNotExist:
-        messages.error(request, 'No se encontró tu carrito.')
-        return redirect('tienda:index')
+    except Exception as e:
+        print(f"Error enviando email: {e}")
+        return False
 
 
-@login_required
-def descargar_pdf(request, presupuesto_id):
-    presupuesto = get_object_or_404(Presupuesto, id=presupuesto_id, user=request.user)
-    
+def generar_pdf_presupuesto(presupuesto, request):
+    """
+    Genera el PDF del presupuesto y lo retorna como buffer
+    """
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     
@@ -76,8 +94,8 @@ def descargar_pdf(request, presupuesto_id):
     elementos.append(Spacer(1, 0.3*inch))
     
     info_data = [
-        ['Cliente:', request.user.get_full_name() or request.user.username],
-        ['Email:', request.user.email],
+        ['Cliente:', presupuesto.user.get_full_name() or presupuesto.user.username],
+        ['Email:', presupuesto.user.email],
         ['Fecha:', presupuesto.fecha_creacion.strftime('%d/%m/%Y %H:%M')],
         ['Estado:', presupuesto.get_estado_display()],
     ]
@@ -153,6 +171,70 @@ def descargar_pdf(request, presupuesto_id):
     elementos.append(Paragraph("Este presupuesto tiene validez de 30 días", estilo_footer))
     
     doc.build(elementos)
+    return buffer
+
+
+@login_required
+def generar_presupuesto_desde_carrito(request):
+    try:
+        carrito = Carrito.objects.get(user=request.user)
+        items_carrito = carrito.items.select_related('producto').all()
+        
+        if not items_carrito.exists():
+            messages.warning(request, 'Tu carrito está vacío. Agrega productos antes de generar un presupuesto.')
+            return redirect('tienda:ver_carrito')
+        
+        presupuesto = Presupuesto.objects.create(user=request.user)
+        
+        for item in items_carrito:
+            PresupuestoItem.objects.create(
+                presupuesto=presupuesto,
+                producto=item.producto,
+                cantidad=item.cantidad,
+                precio_unitario=item.producto.price,
+            )
+        
+        presupuesto.calcular_total()
+        
+        # Generar PDF una vez
+        pdf_buffer = generar_pdf_presupuesto(presupuesto, request)
+        
+        # Enviar email con PDF
+        email_enviado = enviar_email_presupuesto(presupuesto, request)
+        
+        # Enviar por Telegram (copia del buffer)
+        pdf_buffer_telegram = BytesIO(pdf_buffer.getvalue())
+        telegram_enviado = enviar_presupuesto_telegram(request.user, presupuesto, pdf_buffer_telegram)
+        
+        # Mensajes de confirmación
+        if email_enviado and telegram_enviado:
+            messages.success(request, f'Presupuesto #{presupuesto.id} generado y enviado por email y Telegram exitosamente! 📧🤖')
+        elif email_enviado:
+            messages.success(request, f'Presupuesto #{presupuesto.id} generado y enviado por email exitosamente! 📧')
+            if hasattr(request.user, 'profile') and request.user.profile.telegram_chat_id:
+                messages.info(request, 'No se pudo enviar por Telegram. Revisa tu vinculación.')
+            else:
+                messages.info(request, 'Para recibir también por Telegram, vincula tu cuenta con /vincular en el bot.')
+        elif telegram_enviado:
+            messages.success(request, f'Presupuesto #{presupuesto.id} generado y enviado por Telegram exitosamente! 🤖')
+            messages.warning(request, 'Hubo un problema enviando el email.')
+        else:
+            messages.success(request, f'Presupuesto #{presupuesto.id} generado exitosamente.')
+            messages.warning(request, 'Hubo problemas enviando las notificaciones. Puedes descargar el PDF desde tus presupuestos.')
+        
+        return redirect('presupuesto:descargar_pdf', presupuesto_id=presupuesto.id)
+        
+    except Carrito.DoesNotExist:
+        messages.error(request, 'No se encontró tu carrito.')
+        return redirect('tienda:index')
+
+
+@login_required
+def descargar_pdf(request, presupuesto_id):
+    presupuesto = get_object_or_404(Presupuesto, id=presupuesto_id, user=request.user)
+    
+    # Usar la función compartida para generar PDF
+    buffer = generar_pdf_presupuesto(presupuesto, request)
     
     buffer.seek(0)
     response = HttpResponse(buffer, content_type='application/pdf')

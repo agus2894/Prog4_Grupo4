@@ -9,6 +9,11 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 
+# Configurar títulos del admin
+admin.site.site_header = "Mercadito Admin"
+admin.site.site_title = "Mercadito Admin"
+admin.site.index_title = "Panel de Administración del Mercadito"
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -36,6 +41,7 @@ urlpatterns = [
     path("tienda/", include("tienda.urls")),
     path("simple_chat/", include("simple_chat.urls")),
     path("presupuesto/", include("presupuesto.urls")),
+    path("telegram/", include("telegram_bot.urls")),
 ]
 
 

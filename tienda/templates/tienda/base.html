@@ -55,6 +55,12 @@
                             </a>
                         </li>
                         
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'telegram_bot:vincular' %}">
+                                <i class="fab fa-telegram"></i> Telegram
+                            </a>
+                        </li>
+                        
                         {% if user.profile.is_admin %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'tienda:dashboard_list' %}">

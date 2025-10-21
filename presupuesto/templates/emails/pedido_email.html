@@ -1,0 +1,109 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Actualización de Pedido #{{ pedido.id }} - Mercadito{% endblock %}
+
+{% block content %}
+<h2>{{ titulo_email }} 📦</h2>
+
+<p>Hola <strong>{{ pedido.user.get_full_name|default:pedido.user.username }}</strong>,</p>
+
+<p>{{ mensaje_email }}</p>
+
+<div class="info-box">
+    <h3>📦 Información del Pedido</h3>
+    <table class="info-table">
+        <tr>
+            <th>Número de Pedido:</th>
+            <td><strong>#{{ pedido.id }}</strong></td>
+        </tr>
+        <tr>
+            <th>Fecha del Pedido:</th>
+            <td>{{ pedido.fecha_pedido|date:"d/m/Y H:i" }}</td>
+        </tr>
+        <tr>
+            <th>Estado Actual:</th>
+            <td>
+                {% if pedido.estado == 'pendiente' %}
+                    <span style="background-color: #6c757d; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ pedido.get_estado_display }}</span>
+                {% elif pedido.estado == 'procesando' %}
+                    <span style="background-color: #ffc107; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ pedido.get_estado_display }}</span>
+                {% elif pedido.estado == 'enviado' %}
+                    <span style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ pedido.get_estado_display }}</span>
+                {% elif pedido.estado == 'entregado' %}
+                    <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ pedido.get_estado_display }}</span>
+                {% else %}
+                    <span style="background-color: #dc3545; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">{{ pedido.get_estado_display }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Total del Pedido:</th>
+            <td style="color: #198754; font-size: 16px; font-weight: bold;">${{ pedido.total|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Última Actualización:</th>
+            <td>{{ pedido.fecha_actualizacion|date:"d/m/Y H:i" }}</td>
+        </tr>
+    </table>
+</div>
+
+{% if pedido.direccion_envio %}
+<div class="info-box">
+    <h3>🚚 Información de Envío</h3>
+    <p><strong>Dirección:</strong> {{ pedido.direccion_envio }}</p>
+    {% if pedido.telefono %}
+        <p><strong>Teléfono:</strong> {{ pedido.telefono }}</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="color: #198754; margin-bottom: 10px;">📋 Productos en tu Pedido</h3>
+    {% for item in pedido.items.all %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd;">
+            <span><strong>{{ item.producto.title }}</strong> x{{ item.cantidad }}</span>
+            <span style="color: #198754; font-weight: bold;">${{ item.subtotal|floatformat:2 }}</span>
+        </div>
+    {% endfor %}
+    <div style="display: flex; justify-content: space-between; padding: 12px 0 0 0; border-top: 2px solid #198754; margin-top: 10px;">
+        <span style="font-weight: bold; font-size: 16px;">TOTAL:</span>
+        <span style="color: #198754; font-weight: bold; font-size: 16px;">${{ pedido.total|floatformat:2 }}</span>
+    </div>
+</div>
+
+{% if pedido.notas %}
+<div class="info-box">
+    <h3>📝 Notas del Pedido</h3>
+    <p>{{ pedido.notas }}</p>
+</div>
+{% endif %}
+
+{% if pedido.estado == 'enviado' %}
+<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="color: #0c5460; margin-bottom: 10px;">🚚 Tu pedido está en camino</h3>
+    <ul style="margin: 0; padding-left: 20px; color: #0c5460;">
+        <li>Tiempo estimado de entrega: 3-5 días hábiles</li>
+        <li>Recibirás un email cuando sea entregado</li>
+        <li>Si tienes preguntas, contáctanos</li>
+    </ul>
+</div>
+{% elif pedido.estado == 'entregado' %}
+<div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <h3 style="color: #155724; margin-bottom: 10px;">✅ ¡Pedido Entregado!</h3>
+    <p style="color: #155724; margin: 0;">¡Esperamos que disfrutes tus productos! Si tienes algún problema, contáctanos dentro de los próximos 30 días.</p>
+</div>
+{% endif %}
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ site_url }}" class="btn" style="color: white; text-decoration: none;">
+        🛒 Ver Mis Pedidos
+    </a>
+</div>
+
+<p>Si tienes alguna pregunta sobre este pedido, no dudes en contactarnos.</p>
+
+<p style="margin-top: 25px;">
+    <strong>¡Gracias por comprar en Mercadito!</strong><br>
+    El equipo de ventas
+</p>
+{% endblock %}
