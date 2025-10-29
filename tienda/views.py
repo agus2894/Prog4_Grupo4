@@ -1,6 +1,10 @@
 from rest_framework import viewsets, permissions
 from .models import Producto, Carrito, CarritoItem
 from .serializers import ProductoSerializer
+import requests
+from django.shortcuts import render
+from datetime import datetime
+import json
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -402,3 +406,99 @@ def pedido_detalle(request, pedido_id):
         'items': items,
     }
     return render(request, 'tienda/pedido_detalle.html', context)
+# Tus API keys
+OPENWEATHER_API_KEY = 'a31f2609bbad95a4615050e32ca281a1'
+WORLD_TIDES_API_KEY = '1065bc95-301c-4048-88f9-159b05cff4fc'
+MOON_API_KEY = '4c05b46b094e42bfb227445efb573436'
+
+# Lista de costas y ríos argentinos
+COASTS_RIVERS = [
+    {"name": "Mar del Plata", "lat": -38.005, "lon": -57.5426},
+    {"name": "Puerto Madryn", "lat": -42.7699, "lon": -65.0382},
+    {"name": "Villa Gesell", "lat": -37.264, "lon": -56.970},
+    {"name": "Mar de Ajó", "lat": -36.460, "lon": -56.735},
+    {"name": "San Bernardo", "lat": -36.630, "lon": -56.722},
+    {"name": "Río Paraná - Rosario", "lat": -32.9468, "lon": -60.6393},
+    {"name": "Río Uruguay - Colón", "lat": -32.203, "lon": -58.170},
+    {"name": "Río de la Plata - Buenos Aires", "lat": -34.6037, "lon": -58.3816},
+]
+
+def time_view(request):
+    selected = request.GET.get("lugar", "Mar del Plata")
+    lugar = next((c for c in COASTS_RIVERS if c["name"] == selected), COASTS_RIVERS[0])
+    lat, lon = lugar["lat"], lugar["lon"]
+
+    data = {
+        "mareas": [],
+        "viento": {},
+        "clima": "",
+        "temperatura": 0,
+        "luna": "No disponible",
+        "mejor_horario": "No disponible",
+        "extremos": [],
+        "error": None
+    }
+
+    try:
+        # 🌦 Clima y viento
+        weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&lang=es&appid={OPENWEATHER_API_KEY}"
+        weather_resp = requests.get(weather_url, timeout=5)
+        if weather_resp.status_code == 200:
+            weather = weather_resp.json()
+            data["viento"] = {
+                "velocidad": weather.get("wind", {}).get("speed", 0),
+                "direccion": weather.get("wind", {}).get("deg", 0)
+            }
+            data["clima"] = weather.get("weather", [{}])[0].get("description", "")
+            data["temperatura"] = weather.get("main", {}).get("temp", 0)
+        else:
+            data["error"] = f"Error OpenWeather: {weather_resp.status_code}"
+
+        # 🌊 Mareas
+        tides_url = f"https://www.worldtides.info/api/v3?heights&lat={lat}&lon={lon}&key={WORLD_TIDES_API_KEY}"
+        tides_resp = requests.get(tides_url, timeout=5)
+        if tides_resp.status_code == 200:
+            tides = tides_resp.json()
+            data["mareas"] = tides.get("heights", [])[:10]  # primeras 10
+            data["extremos"] = tides.get("extremes", [])[:10]  # picos altos/bajos
+        else:
+            data["error"] = f"Error WorldTides: {tides_resp.status_code}"
+
+        # 🌙 Fase de la luna
+        moon_url = f"https://api.ipgeolocation.io/astronomy?apiKey={MOON_API_KEY}&lat={lat}&long={lon}"
+        moon_resp = requests.get(moon_url, timeout=5)
+        if moon_resp.status_code == 200:
+            moon_data = moon_resp.json()
+            FASES_LUNARES = {
+                "NEW_MOON": "Luna Nueva 🌑",
+                "WAXING_CRESCENT": "Luna Creciente 🌒",
+                "FIRST_QUARTER": "Cuarto Creciente 🌓",
+                "WAXING_GIBBOUS": "Gibosa Creciente 🌔",
+                "FULL_MOON": "Luna Llena 🌕",
+                "WANING_GIBBOUS": "Gibosa Menguante 🌖",
+                "LAST_QUARTER": "Cuarto Menguante 🌗",
+                "WANING_CRESCENT": "Luna Menguante 🌘",
+            }
+            fase = moon_data.get("moon_phase")
+            data["luna"] = FASES_LUNARES.get(fase, "No disponible")
+        else:
+            data["luna"] = "No disponible"
+
+        # 🎣 Mejor horario de pesca
+        if data["mareas"]:
+            primera_marea = data["mareas"][0].get("date", "")
+            data["mejor_horario"] = f"Cerca de {primera_marea} (aproximado)"
+
+    except Exception as e:
+        data["error"] = str(e)
+
+    context = {
+        "lugar": lugar,
+        "ciudad": selected,
+        "fecha": datetime.now(),
+        "data": data,
+        "coasts_rivers": COASTS_RIVERS,
+        "mareas_json": json.dumps(data["mareas"]),
+    }
+
+    return render(request, "tienda/tiempo.html", context)
