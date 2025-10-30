@@ -5,8 +5,10 @@ from .views import (
     ProductoUpdateView, ProductoDeleteView,
     ver_carrito, agregar_al_carrito, actualizar_carrito,
     eliminar_del_carrito, vaciar_carrito, carrito_count,
-    checkout, mis_pedidos, pedido_detalle
+    checkout, mis_pedidos, pedido_detalle,
+    time_view
 )
+
 
 app_name = "tienda"
 
@@ -28,4 +30,5 @@ urlpatterns = [
     path("checkout/", checkout, name="checkout"),
     path("pedidos/", mis_pedidos, name="mis_pedidos"),
     path("pedidos/<int:pedido_id>/", pedido_detalle, name="pedido_detalle"),
+    path("tiempo/", time_view, name="tiempo"),
 ]

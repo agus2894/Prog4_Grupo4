@@ -8,6 +8,8 @@ from tienda.views import ProductoViewSet, redirect_dashboard
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from tienda.views import time_view
+
 
 # Configurar títulos del admin
 admin.site.site_header = "Mercadito Admin"
@@ -42,6 +44,7 @@ urlpatterns = [
     path("simple_chat/", include("simple_chat.urls")),
     path("presupuesto/", include("presupuesto.urls")),
     path("telegram/", include("telegram_bot.urls")),
+    path("tiempo/", time_view, name="tiempo"),
 ]
 
 

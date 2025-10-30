@@ -1,0 +1,162 @@
+{% extends "tienda/base.html" %}
+
+{% block title %}Tiempo y Mareas - {{ ciudad }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">🌊 Tiempo y Mareas</h1>
+
+    <!-- Selector de lugar -->
+    <form method="get" class="mb-4">
+        <label for="lugar" class="form-label">Seleccioná una costa o río:</label>
+        <select name="lugar" id="lugar" class="form-select" onchange="this.form.submit()">
+            {% for lugar in coasts_rivers %}
+                <option value="{{ lugar.name }}" {% if lugar.name == ciudad %}selected{% endif %}>
+                    {{ lugar.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <p class="text-muted">Fecha: {{ fecha|date:"d/m/Y H:i" }}</p>
+
+    {% if data.error %}
+        <div class="alert alert-danger">⚠️ Error al obtener datos: {{ data.error }}</div>
+    {% else %}
+        <!-- Clima y Viento -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card text-bg-primary mb-3">
+                    <div class="card-header">🌦 Clima y Viento</div>
+                    <div class="card-body">
+                        <p><strong>Clima:</strong> {{ data.clima }}</p>
+                        <p><strong>Temperatura:</strong> {{ data.temperatura }} °C</p>
+                        <p><strong>Velocidad del viento:</strong> {{ data.viento.velocidad }} m/s</p>
+                        <p><strong>Dirección del viento:</strong> {{ data.viento.direccion }}°</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card text-bg-warning mb-3">
+                    <div class="card-header">🌙 Fase de la Luna</div>
+                    <div class="card-body">
+                        <p>{{ data.luna }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Próximas Mareas -->
+        <div class="card mb-4">
+            <div class="card-header">🌊 Próximas Mareas</div>
+            <div class="card-body">
+                {% if data.mareas %}
+                    <ul class="list-group list-group-flush">
+                        {% for marea in data.mareas %}
+                            <li class="list-group-item">
+                                <strong>Fecha:</strong> {{ marea.date }} |
+                                <strong>Altura:</strong> {{ marea.height }} m
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No hay datos de mareas disponibles.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mejor Horario de Pesca -->
+        <div class="card text-bg-success mb-5">
+            <div class="card-header">🎣 Mejor Horario de Pesca</div>
+            <div class="card-body">
+                <p>{{ data.mejor_horario }}</p>
+            </div>
+        </div>
+
+        <!-- Tablero de Picos Altos y Bajos -->
+        <h2 class="mb-3 text-center">📊 Tablero de Mareas y Picos de Pesca</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card text-bg-success mb-3 shadow">
+                    <div class="card-header">🌊 Picos Altos (Mareas Altas)</div>
+                    <div class="card-body">
+                        {% if data.extremos %}
+                            <ul class="list-group list-group-flush">
+                                {% for e in data.extremos %}
+                                    {% if "High" in e.type %}
+                                        <li class="list-group-item">
+                                            <strong>{{ e.date }}</strong> — {{ e.height }} m
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No hay datos disponibles.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card text-bg-primary mb-3 shadow">
+                    <div class="card-header">⚓ Picos Bajos (Mareas Bajas)</div>
+                    <div class="card-body">
+                        {% if data.extremos %}
+                            <ul class="list-group list-group-flush">
+                                {% for e in data.extremos %}
+                                    {% if "Low" in e.type %}
+                                        <li class="list-group-item">
+                                            <strong>{{ e.date }}</strong> — {{ e.height }} m
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No hay datos disponibles.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Mareas -->
+        <div class="card mt-4 shadow">
+            <div class="card-header">📈 Gráfico de Mareas (Altura vs Hora)</div>
+            <div class="card-body">
+                <canvas id="graficoMareas" height="120"></canvas>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const mareas = JSON.parse('{{ mareas_json|escapejs }}');
+            const labels = mareas.map(m => new Date(m.date).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}));
+            const valores = mareas.map(m => m.height);
+
+            const ctx = document.getElementById('graficoMareas');
+            const dataMareas = {
+                labels: labels,
+                datasets: [{
+                    label: 'Altura de marea (m)',
+                    data: valores,
+                    borderColor: 'rgba(0, 123, 255, 0.8)',
+                    backgroundColor: 'rgba(0, 123, 255, 0.3)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+
+            new Chart(ctx, {
+                type: 'line',
+                data: dataMareas,
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        </script>
+
+    {% endif %}
+</div>
+{% endblock %}
