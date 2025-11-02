@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "simple_chat",
     'presupuesto',
     'telegram_bot',
+    'analytics',  # Nueva app de IA y analytics
 ]
 
 SITE_ID = 1
@@ -98,6 +99,7 @@ DATABASES = {
     "default": dj_database_url.config(
         default=env("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
         conn_max_age=600,
+        conn_health_checks=True,  # Verifica conexiones automáticamente
     )
 }
 

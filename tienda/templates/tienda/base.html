@@ -29,12 +29,6 @@
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'simple_chat:chat' %}">
-                                <i class="fas fa-comments"></i> Chat
-                            </a>
-                        </li>
-                        
-                        <li class="nav-item">
                             <a class="nav-link position-relative" href="{% url 'tienda:ver_carrito' %}">
                                 <i class="fas fa-shopping-cart"></i> Carrito
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="carrito-count">
@@ -54,11 +48,25 @@
                                 <i class="fas fa-file-invoice"></i> Presupuestos
                             </a>
                         </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'simple_chat:chat' %}">
+                                <i class="fas fa-comments"></i> Chat
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'analytics:dashboard_ia' %}">
+                                <i class="fas fa-brain"></i> IA & Ofertas
+                            </a>
+                        </li>
+                        
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'tienda:tiempo' %}">
                                 <i class="fas fa-cloud-sun"></i> Clima y Mareas
                             </a>
                         </li>
+                        
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'telegram_bot:vincular' %}">
                                 <i class="fab fa-telegram"></i> Telegram

@@ -20,10 +20,10 @@
                         
                         <!-- Imagen (placeholder si no hay) -->
                         {% if producto.image %}
-                            <img src="{{ producto.image.url }}" class="card-img-top rounded-top-4" alt="{{ producto.title }}" style="height: 200px; object-fit: cover;">
+                            <img src="{{ producto.image.url }}" class="card-img-top rounded-top-4" alt="{{ producto.title }}" style="height: 200px; object-fit: cover;" loading="lazy">
                         {% else %}
                             <img src="https://via.placeholder.com/300x200.png?text=Sin+Imagen" 
-                                 class="card-img-top rounded-top-4" alt="Producto sin imagen" style="height: 200px; object-fit: cover;">
+                                 class="card-img-top rounded-top-4" alt="Producto sin imagen" style="height: 200px; object-fit: cover;" loading="lazy">
                         {% endif %}
 
                         <div class="card-body">

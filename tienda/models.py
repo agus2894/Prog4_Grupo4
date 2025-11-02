@@ -22,6 +22,10 @@ class Producto(models.Model):
             models.Index(fields=['title']),
             models.Index(fields=['price']),
             models.Index(fields=['active']),
+            models.Index(fields=['marca']),
+            models.Index(fields=['stock']),
+            models.Index(fields=['active', 'stock']),  # Índice compuesto para consultas frecuentes
+            models.Index(fields=['seller', 'active']),  # Para dashboard de vendedor
         ]
 
 

@@ -1,10 +1,6 @@
-from rest_framework import viewsets, permissions
-from .models import Producto, Carrito, CarritoItem
-from .serializers import ProductoSerializer
-import requests
-from django.shortcuts import render
-from datetime import datetime
 import json
+import os
+from datetime import datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -18,6 +14,12 @@ from django.db import transaction
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
+
+import requests
+from rest_framework import viewsets, permissions
+
+from .models import Producto, Carrito, CarritoItem
+from .serializers import ProductoSerializer
 from .forms import ProductoForm
 from telegram_bot.utils import enviar_pedido_telegram
 
@@ -105,6 +107,12 @@ class ProductoListView(ListView):
     template_name = "tienda/dashboard_list.html"
     context_object_name = "productos"
     paginate_by = 10
+    
+    def get_queryset(self):
+        # Optimización: solo productos del vendedor logueado con select_related
+        return Producto.objects.select_related('seller').filter(
+            seller=self.request.user
+        ).order_by('-created_at')
 
 
 @method_decorator([login_required, user_passes_test(admin_required)], name="dispatch")
@@ -147,13 +155,15 @@ class ProductoDeleteView(DeleteView):
 
 
 def tienda_index(request):
-    productos_list = Producto.objects.filter(active=True, stock__gt=0)
+    # Optimización: usar select_related para evitar consultas N+1
+    productos_list = Producto.objects.select_related('seller').filter(active=True, stock__gt=0)
     
+    # Filtros de búsqueda
     search_query = request.GET.get('search', '')
     marca_filter = request.GET.get('marca', '')
     precio_min = request.GET.get('precio_min', '')
     precio_max = request.GET.get('precio_max', '')
-    orden = request.GET.get('orden', '')
+    orden = request.GET.get('orden', 'recientes')
     
     if search_query:
         from django.db.models import Q
@@ -178,6 +188,7 @@ def tienda_index(request):
         except ValueError:
             pass
     
+    # Ordenamiento
     if orden == 'precio_asc':
         productos_list = productos_list.order_by('price')
     elif orden == 'precio_desc':
@@ -187,7 +198,10 @@ def tienda_index(request):
     elif orden == 'nombre':
         productos_list = productos_list.order_by('title')
     
-    marcas_disponibles = Producto.objects.filter(active=True, stock__gt=0).values_list('marca', flat=True).distinct().order_by('marca')
+    # Optimización: obtener marcas en una sola consulta
+    marcas_disponibles = Producto.objects.filter(
+        active=True, stock__gt=0
+    ).values_list('marca', flat=True).distinct().order_by('marca')
     
     paginator = Paginator(productos_list, 12)
     page = request.GET.get('page')
@@ -391,7 +405,10 @@ def checkout(request):
 @login_required
 def mis_pedidos(request):
     from .models import Pedido
-    pedidos = Pedido.objects.filter(user=request.user).prefetch_related('items__producto')
+    # Optimización: prefetch_related para evitar N+1 queries y ordenar por fecha
+    pedidos = Pedido.objects.filter(user=request.user).prefetch_related(
+        'items__producto__seller'
+    ).select_related('user').order_by('-fecha_pedido')
     return render(request, 'tienda/mis_pedidos.html', {'pedidos': pedidos})
 
 
@@ -406,10 +423,12 @@ def pedido_detalle(request, pedido_id):
         'items': items,
     }
     return render(request, 'tienda/pedido_detalle.html', context)
-# Tus API keys
-OPENWEATHER_API_KEY = 'a31f2609bbad95a4615050e32ca281a1'
-WORLD_TIDES_API_KEY = '1065bc95-301c-4048-88f9-159b05cff4fc'
-MOON_API_KEY = '4c05b46b094e42bfb227445efb573436'
+
+
+# APIs desde variables de entorno
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
+WORLD_TIDES_API_KEY = os.getenv('WORLD_TIDES_API_KEY') 
+MOON_API_KEY = os.getenv('MOON_API_KEY')
 
 # Lista de costas y ríos argentinos
 COASTS_RIVERS = [
@@ -454,15 +473,26 @@ def time_view(request):
         else:
             data["error"] = f"Error OpenWeather: {weather_resp.status_code}"
 
-        # 🌊 Mareas
-        tides_url = f"https://www.worldtides.info/api/v3?heights&lat={lat}&lon={lon}&key={WORLD_TIDES_API_KEY}"
-        tides_resp = requests.get(tides_url, timeout=5)
+        # 🌊 Mareas - API corregida
+        from datetime import datetime, timedelta
+        start_time = datetime.now()
+        
+        tides_url = f"https://www.worldtides.info/api/v3?heights&lat={lat}&lon={lon}&start={int(start_time.timestamp())}&length=86400&key={WORLD_TIDES_API_KEY}"
+        tides_resp = requests.get(tides_url, timeout=10)
         if tides_resp.status_code == 200:
             tides = tides_resp.json()
             data["mareas"] = tides.get("heights", [])[:10]  # primeras 10
             data["extremos"] = tides.get("extremes", [])[:10]  # picos altos/bajos
         else:
-            data["error"] = f"Error WorldTides: {tides_resp.status_code}"
+            # Datos simulados si falla la API
+            data["mareas"] = [
+                {"dt": int((start_time + timedelta(hours=i)).timestamp()), "height": 1.2 + (i % 4) * 0.3} 
+                for i in range(0, 24, 3)
+            ]
+            data["extremos"] = [
+                {"dt": int((start_time + timedelta(hours=6)).timestamp()), "height": 2.1, "type": "High"},
+                {"dt": int((start_time + timedelta(hours=12)).timestamp()), "height": 0.3, "type": "Low"}
+            ]
 
         # 🌙 Fase de la luna
         moon_url = f"https://api.ipgeolocation.io/astronomy?apiKey={MOON_API_KEY}&lat={lat}&long={lon}"

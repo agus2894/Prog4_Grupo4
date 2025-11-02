@@ -44,6 +44,7 @@ urlpatterns = [
     path("simple_chat/", include("simple_chat.urls")),
     path("presupuesto/", include("presupuesto.urls")),
     path("telegram/", include("telegram_bot.urls")),
+    path("analytics/", include("analytics.urls")),  # Nueva app de IA
     path("tiempo/", time_view, name="tiempo"),
 ]
 
