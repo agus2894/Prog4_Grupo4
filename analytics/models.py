@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from tienda.models import Producto
+from decimal import Decimal
 import json
 
 
@@ -64,12 +65,14 @@ class ComparacionPrecios(models.Model):
             self.precio_maximo = max(precios)
             
             # IA simple: si está 15% por debajo del promedio, es oferta
-            if self.producto.price < self.precio_promedio_mercado * 0.85:
+            umbral_oferta = self.precio_promedio_mercado * Decimal('0.85')
+            if self.producto.price < umbral_oferta:
                 self.es_oferta = True
-                self.porcentaje_ahorro = ((self.precio_promedio_mercado - self.producto.price) / self.precio_promedio_mercado) * 100
+                diferencia = self.precio_promedio_mercado - self.producto.price
+                self.porcentaje_ahorro = float((diferencia / self.precio_promedio_mercado) * 100)
             else:
                 self.es_oferta = False
-                self.porcentaje_ahorro = 0
+                self.porcentaje_ahorro = 0.0
         
         self.save()
 

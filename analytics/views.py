@@ -6,8 +6,9 @@ from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 import json
+import random
 from datetime import datetime, timedelta
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q, Avg, Sum
 from django.contrib.auth.models import User
 from django.utils import timezone
 
@@ -198,7 +199,7 @@ class DashboardIA(TemplateView):
         context['recomendaciones'] = InteligenciaArtificial.obtener_recomendaciones(user)
         
         # Análisis del carrito inteligente
-        carrito_inteligente, created = CarritoInteligente.objects.get_or_create(usuario=user)
+        carrito_inteligente, created = CarritoInteligente.objects.get_or_create(user=user)
         context['carrito_inteligente'] = carrito_inteligente
         
         # Productos en oferta detectados por IA
@@ -214,11 +215,11 @@ class DashboardIA(TemplateView):
         context['ofertas_ia'] = ofertas_ia
         
         # Estadísticas del usuario
-        comportamientos = UsuarioComportamiento.objects.filter(usuario=user)
+        comportamientos = UsuarioComportamiento.objects.filter(user=user)
         context['stats'] = {
-            'productos_vistos': comportamientos.aggregate(total=Count('vistas'))['total'] or 0,
-            'productos_comprados': comportamientos.filter(comprado=True).count(),
-            'tiempo_total': comportamientos.aggregate(total=Sum('tiempo_total'))['total'] or 0,
+            'productos_vistos': comportamientos.count(),
+            'productos_comprados': comportamientos.filter(accion='buy').count(),
+            'tiempo_total': comportamientos.aggregate(total=Sum('tiempo_en_pagina'))['total'] or 0,
         }
         
         return context
@@ -239,53 +240,39 @@ def registrar_comportamiento(request):
         
         # Registrar o actualizar comportamiento
         comportamiento, created = UsuarioComportamiento.objects.get_or_create(
-            usuario=request.user,
+            user=request.user,
             producto=producto,
-            defaults={
-                'vistas': 1 if accion == 'view' else 0,
-                'tiempo_total': tiempo,
-                'clicks': 1 if accion in ['click', 'compare'] else 0,
-                'agregado_carrito': accion == 'add_cart',
-                'comprado': accion == 'buy'
-            }
+            accion=accion,
+            defaults={'tiempo_en_pagina': tiempo}
         )
         
         if not created:
-            # Actualizar comportamiento existente
-            if accion == 'view':
-                comportamiento.vistas += 1
-                comportamiento.tiempo_total += tiempo
-            elif accion in ['click', 'compare']:
-                comportamiento.clicks += 1
-            elif accion == 'add_cart':
-                comportamiento.agregado_carrito = True
-            elif accion == 'buy':
-                comportamiento.comprado = True
-            
+            # Actualizar comportamiento existente si es la misma acción
+            comportamiento.tiempo_en_pagina += tiempo
             comportamiento.save()
         
         # Actualizar carrito inteligente
         carrito, _ = CarritoInteligente.objects.get_or_create(
-            usuario=request.user,
-            defaults={'productos_analizados': 0, 'score_intencion_compra': 0.0}
+            user=request.user,
+            defaults={'score_intencion_compra': 0.0}
         )
         
-        # Recalcular score de intención de compra
-        total_comportamientos = UsuarioComportamiento.objects.filter(usuario=request.user)
+        # Recalcular score de intención de compra basado en comportamientos
+        total_comportamientos = UsuarioComportamiento.objects.filter(user=request.user)
         score = 0.0
         
-        for comp in total_comportamientos:
-            # Algoritmo de scoring
-            score += min(comp.vistas * 0.1, 0.5)  # Máximo 0.5 por vistas
-            score += min(comp.tiempo_total * 0.01, 0.3)  # Máximo 0.3 por tiempo
-            score += comp.clicks * 0.15  # 0.15 por click
-            if comp.agregado_carrito:
-                score += 0.25
-            if comp.comprado:
-                score += 0.4
+        # Algoritmo simple de scoring
+        views = total_comportamientos.filter(accion='view').count()
+        carts = total_comportamientos.filter(accion='cart').count()
+        buys = total_comportamientos.filter(accion='buy').count()
+        compares = total_comportamientos.filter(accion='compare').count()
         
-        carrito.score_intencion_compra = min(score / max(total_comportamientos.count(), 1), 1.0)
-        carrito.productos_analizados = total_comportamientos.count()
+        score += min(views * 0.05, 0.3)  # Máximo 0.3 por vistas
+        score += carts * 0.2  # 0.2 por cada item agregado al carrito
+        score += buys * 0.4   # 0.4 por cada compra
+        score += compares * 0.1  # 0.1 por cada comparación
+        
+        carrito.score_intencion_compra = min(score, 1.0)
         carrito.save()
         
         return JsonResponse({
@@ -305,9 +292,9 @@ def comparar_precios(request, producto_id):
     ia = InteligenciaArtificial()
     analisis = ia.analizar_precio_inteligente(producto, request.user if request.user.is_authenticated else None)
     
-    # Productos similares (simulado - en producción usarías ML)
+    # Productos similares por marca (ya que no hay categoría)
     productos_similares = Producto.objects.filter(
-        categoria=producto.categoria
+        marca=producto.marca
     ).exclude(id=producto.id)[:5]
     
     # Agregar scores de IA simulados
@@ -317,7 +304,7 @@ def comparar_precios(request, producto_id):
     # Historial de análisis
     historial_analisis = ComparacionPrecios.objects.filter(
         producto=producto
-    ).order_by('-fecha_analisis')[:10]
+    ).order_by('-last_updated')[:10]
     
     context = {
         'producto': producto,
