@@ -142,7 +142,7 @@ class TendenciaMercado(models.Model):
             popularidad=Count('id')
         ).order_by('-popularidad')[:10]
         
-        for categoria in ['Electrónicos', 'Ropa', 'Hogar', 'Deportes']:
+        for categoria in ['Electrónicos', 'Ropa', 'Hogar', 'Deportes', 'Pesca']:
             tendencia, created = cls.objects.get_or_create(categoria=categoria)
             tendencia.productos_trending = [p['producto'] for p in productos_populares]
             tendencia.save()
