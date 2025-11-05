@@ -2,8 +2,8 @@
 
 set -o errexit
 
-# instalar dependencias (Render hace pip install automáticamente si lo especificás en build)
-# pip install -r requirements.txt  # Comentado porque Render lo hace automáticamente
+# instalar dependencias
+pip install -r requirements.txt
 
 # migraciones
 python manage.py migrate --noinput
