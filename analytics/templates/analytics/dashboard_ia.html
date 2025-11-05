@@ -10,12 +10,12 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card bg-gradient-primary text-white border-0 shadow-lg">
-                <div class="card-body text-center py-5">
+                <div class="card-body text-center py-3">
                     <h1 class="display-4 fw-bold mb-3">
-                        🤖 Dashboard de Inteligencia Artificial
+                        Dashboard
                     </h1>
                     <p class="lead mb-0">
-                        Recomendaciones personalizadas y análisis inteligente de precios
+                        Recomendaciones de precios
                     </p>
                 </div>
             </div>
@@ -64,7 +64,7 @@
                         <i class="fas fa-brain fa-3x"></i>
                     </div>
                     <h4 class="fw-bold">{{ carrito_inteligente.score_intencion_compra|floatformat:2 }}</h4>
-                    <p class="text-muted mb-0">Score de IA</p>
+                    <p class="text-muted mb-0">IA</p>
                 </div>
             </div>
         </div>
@@ -99,10 +99,9 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0">
                     <h3 class="mb-0">
-                        <i class="fas fa-magic text-primary me-2"></i>
-                        Recomendaciones Personalizadas por IA
+                        Recomendaciones de IA
                     </h3>
-                    <p class="text-muted mb-0">Productos seleccionados especialmente para vos</p>
+                    <p class="text-muted mb-0">Productos seleccionados para vos</p>
                 </div>
                 <div class="card-body">
                     {% if recomendaciones %}
@@ -134,8 +133,8 @@
                     {% else %}
                     <div class="text-center py-5">
                         <i class="fas fa-robot fa-4x text-muted mb-3"></i>
-                        <h5 class="text-muted">La IA está aprendiendo tu comportamiento...</h5>
-                        <p class="text-muted">¡Navega más productos para recibir recomendaciones personalizadas!</p>
+                        <h5 class="text-muted">La IA está aprendiendo ...</h5>
+                        <p class="text-muted"> Navega más productos para recibir recomendaciones</p>
                     </div>
                     {% endif %}
                 </div>
@@ -150,9 +149,9 @@
                 <div class="card-header bg-white border-0">
                     <h3 class="mb-0">
                         <i class="fas fa-fire text-danger me-2"></i>
-                        🔥 Ofertas Detectadas por IA
+                         Ofertas Detectadas por IA
                     </h3>
-                    <p class="text-muted mb-0">Precios analizados automáticamente por inteligencia artificial</p>
+                    <p class="text-muted mb-0">Precios analizados</p>
                 </div>
                 <div class="card-body">
                     {% if ofertas_ia %}
@@ -167,9 +166,9 @@
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="card-title mb-0">{{ oferta.producto.title|truncatechars:50 }}</h6>
                                         {% if oferta.analisis.porcentaje_ahorro > 25 %}
-                                            <span class="badge bg-danger">🔥 SÚPER OFERTA</span>
+                                            <span class="badge bg-danger"> SÚPER OFERTA</span>
                                         {% elif oferta.analisis.porcentaje_ahorro > 15 %}
-                                            <span class="badge bg-warning">✨ OFERTA</span>
+                                            <span class="badge bg-warning"> OFERTA</span>
                                         {% endif %}
                                     </div>
                                     
@@ -208,8 +207,8 @@
                     {% else %}
                     <div class="text-center py-5">
                         <i class="fas fa-search fa-4x text-muted mb-3"></i>
-                        <h5 class="text-muted">La IA está analizando precios...</h5>
-                        <p class="text-muted">¡Pronto encontraremos las mejores ofertas para vos!</p>
+                        <h5 class="text-muted"> La IA está analizando precios...</h5>
+                        <p class="text-muted"> Encontraremos las mejores ofertas</p>
                     </div>
                     {% endif %}
                 </div>
