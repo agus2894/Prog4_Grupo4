@@ -13,9 +13,18 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 
+# SECRET_KEY from environment
 SECRET_KEY = env("SECRET_KEY", default="dev-secret-no-usar-en-prod")
-DEBUG = env("DEBUG", default=True)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+
+# DEBUG cuando no esté en Render (en Render setearás env var)
+DEBUG = 'RENDER' not in os.environ
+
+# ALLOWED_HOSTS: usa el host que Render provee en RENDER_EXTERNAL_HOSTNAME
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS = [RENDER_EXTERNAL_HOSTNAME]
+else:
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 
 INSTALLED_APPS = [
@@ -95,12 +104,9 @@ TEMPLATES = [
 WSGI_APPLICATION = "ecommerce.wsgi.application"
 
 
+# DATABASES via DATABASE_URL (Render te dará la URL)
 DATABASES = {
-    "default": dj_database_url.config(
-        default=env("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
-        conn_max_age=600,
-        conn_health_checks=True,  # Verifica conexiones automáticamente
-    )
+    "default": dj_database_url.config(default=os.environ.get("DATABASE_URL"), conn_max_age=600)
 }
 
 
@@ -118,9 +124,12 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Static files — WhiteNoise
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+if not DEBUG:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 MEDIA_URL = "/media/"
