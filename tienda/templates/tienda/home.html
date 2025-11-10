@@ -56,7 +56,7 @@
                         <h3 class="mb-3">Accede a tu cuenta</h3>
                         <a href="{% url 'account_login' %}" class="btn btn-success w-100 btn-custom mb-2">Iniciar sesión</a>
                         <a href="{% url 'account_signup' %}" class="btn btn-outline-secondary w-100 btn-custom mb-3">Registrarse</a>
-                        <!-- OAuth buttons temporarily disabled due to MultipleObjectsReturned error
+                        {% comment %}
                         <hr>
                         <h6 class="text-muted">O ingresar con:</h6>
                         <a href="{% provider_login_url 'google' %}" class="btn btn-danger w-100 btn-custom mb-2">
@@ -65,7 +65,7 @@
                         <a href="{% provider_login_url 'github' %}" class="btn btn-dark w-100 btn-custom">
                             <i class="fab fa-github me-2"></i>GitHub
                         </a>
-                        -->
+                        {% endcomment %}
                     </div>
                 </div>
             </div>
