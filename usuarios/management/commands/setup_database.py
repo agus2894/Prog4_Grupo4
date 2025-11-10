@@ -91,8 +91,22 @@ class Command(BaseCommand):
         github_client_id = os.getenv('GITHUB_CLIENT_ID', '').strip()
         github_client_secret = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
-        # Obtener sitio
+        # Obtener sitio y configurar dominio correcto
         site = Site.objects.get_current()
+        
+        # Configurar dominio según el entorno
+        render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+        if render_hostname:
+            # Estamos en Render (producción)
+            site.domain = render_hostname
+            site.name = 'Mercadito Producción'
+        else:
+            # Estamos en desarrollo local
+            site.domain = 'localhost:8000'
+            site.name = 'Mercadito Local'
+        
+        site.save()
+        self.stdout.write(f'   🌐 Sitio configurado: {site.domain}')
 
         # Limpiar aplicaciones existentes para evitar duplicados
         SocialApp.objects.filter(provider__in=['google', 'github']).delete()
