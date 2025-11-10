@@ -5,10 +5,18 @@ from .models import Producto, Pedido, PedidoItem
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ("title", "marca", "price", "stock", "active", "created_at", "seller")
+    list_display = ("title", "marca", "price", "stock", "active", "created_at", "seller", "preview_image")
     list_filter = ("active", "marca", "created_at")
     search_fields = ("title", "description", "marca")
-    fields = ("title", "description", "marca", "price", "stock", "active", "seller")
+    fields = ("title", "description", "marca", "price", "stock", "image", "active", "seller")
+    
+    def preview_image(self, obj):
+        """Muestra una preview de la imagen en el admin"""
+        return format_html(
+            '<img src="{}" style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;" />',
+            obj.get_thumbnail_url()
+        )
+    preview_image.short_description = "Preview"
 
 
 class PedidoItemInline(admin.TabularInline):

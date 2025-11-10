@@ -18,13 +18,8 @@
                 <div class="col-md-4">
                     <div class="card h-100 shadow-lg border-0 rounded-4">
                         
-                        <!-- Imagen (placeholder si no hay) -->
-                        {% if producto.image %}
-                            <img src="{{ producto.image.url }}" class="card-img-top rounded-top-4" alt="{{ producto.title }}" style="height: 200px; object-fit: cover;" loading="lazy">
-                        {% else %}
-                            <img src="https://via.placeholder.com/300x200.png?text=Sin+Imagen" 
-                                 class="card-img-top rounded-top-4" alt="Producto sin imagen" style="height: 200px; object-fit: cover;" loading="lazy">
-                        {% endif %}
+                        <!-- Imagen con sistema inteligente de placeholders -->
+                        <img src="{{ producto.get_image_url }}" class="card-img-top rounded-top-4" alt="{{ producto.title }}" style="height: 200px; object-fit: cover;" loading="lazy">
 
                         <div class="card-body">
                             <h5 class="card-title fw-bold text-success">{{ producto.title }}</h5>
