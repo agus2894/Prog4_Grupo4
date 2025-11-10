@@ -1,0 +1,140 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$5to5oHyD2lkDm8NWNBTPtd$ADeIxn37TFlVMsdIakQDVv71kl9+WDi1PeFJ1aEJLmE=",
+    "last_login": "2025-11-02T13:47:46.031Z",
+    "is_superuser": false,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-30T02:50:48.524Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$nJxKPRbIwIdgqb4Taxkq5o$79plNiCBUwWN7msQNyir/pOTuGa7zgdx3MP0up3A4aM=",
+    "last_login": "2025-11-10T01:50:24.393Z",
+    "is_superuser": true,
+    "username": "agustin",
+    "first_name": "",
+    "last_name": "",
+    "email": "agustin@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-10-30T02:57:58.503Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$wtOAas7L0d0dP1hyg8KqSI$sDkL1/EEdRyr2LLn12m4HuOPU+mB3qi/FM6sRZDvhjE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "demo",
+    "first_name": "Usuario",
+    "last_name": "Demo",
+    "email": "demo@mercadito.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-11-02T14:34:59.357Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "usuarios.profile",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "is_admin": false,
+    "direccion": null,
+    "empresa": null,
+    "fecha_verificacion": null,
+    "role": null,
+    "telefono": null,
+    "telegram_chat_id": null
+  }
+},
+{
+  "model": "usuarios.profile",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "is_admin": true,
+    "direccion": null,
+    "empresa": null,
+    "fecha_verificacion": null,
+    "role": null,
+    "telefono": null,
+    "telegram_chat_id": null
+  }
+},
+{
+  "model": "usuarios.profile",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "is_admin": false,
+    "direccion": null,
+    "empresa": null,
+    "fecha_verificacion": null,
+    "role": null,
+    "telefono": null,
+    "telegram_chat_id": null
+  }
+},
+{
+  "model": "tienda.producto",
+  "pk": 9,
+  "fields": {
+    "seller": 2,
+    "title": "Cañas",
+    "description": "Cañitas Voladoras",
+    "marca": "Generico",
+    "price": "100000.00",
+    "stock": 1000,
+    "created_at": "2025-11-04T16:29:07.469Z",
+    "active": true
+  }
+},
+{
+  "model": "tienda.producto",
+  "pk": 10,
+  "fields": {
+    "seller": 2,
+    "title": "Tanza",
+    "description": "Tancitas",
+    "marca": "Generico",
+    "price": "1000.00",
+    "stock": 1000,
+    "created_at": "2025-11-04T16:29:26.021Z",
+    "active": true
+  }
+},
+{
+  "model": "tienda.producto",
+  "pk": 11,
+  "fields": {
+    "seller": 2,
+    "title": "Carnada",
+    "description": "Gusanos",
+    "marca": "Generico",
+    "price": "100.00",
+    "stock": 100,
+    "created_at": "2025-11-04T16:29:43.577Z",
+    "active": true
+  }
+}
+]
