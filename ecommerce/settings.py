@@ -24,7 +24,8 @@ RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS = [RENDER_EXTERNAL_HOSTNAME]
 else:
-    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+    # Para desarrollo local, priorizar localhost para OAuth
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 INSTALLED_APPS = [
@@ -41,7 +42,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    "allauth.socialaccount.providers.github",
+    # "allauth.socialaccount.providers.github",  # Temporalmente desactivado
     "tienda",
     "usuarios",
     "simple_chat",
@@ -68,9 +69,6 @@ LOGOUT_REDIRECT_URL = "home"
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_UNIQUE_EMAIL = True
 
 # Configuración de autenticación social
@@ -81,12 +79,25 @@ SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_QUERY_EMAIL = True
 
 # Configuración de campos de perfil social
-SOCIALACCOUNT_ADAPTER = 'usuarios.adapters.CustomSocialAccountAdapter'
+# SOCIALACCOUNT_ADAPTER = 'usuarios.adapters.CustomSocialAccountAdapter'  # Temporalmente desactivado
+
+# Forzar uso de localhost en desarrollo para OAuth
+if DEBUG:
+    # Asegurar que los callbacks de OAuth usen localhost
+    USE_X_FORWARDED_HOST = False
+    USE_X_FORWARDED_PORT = False
 
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+]
+
+# Agregar middleware de localhost solo en desarrollo
+if DEBUG:
+    MIDDLEWARE.append("ecommerce.middleware.ForceLocalhostMiddleware")
+
+MIDDLEWARE.extend([
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -94,7 +105,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-]
+])
 
 
 ROOT_URLCONF = "ecommerce.urls"
@@ -156,13 +167,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {
-            "client_id": env("GOOGLE_CLIENT_ID", default=""),
-            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
-            "key": "",
-        }
-    },
+    # Configuración a través de la base de datos solamente
 }
 
 
