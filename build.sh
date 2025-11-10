@@ -16,9 +16,9 @@ python manage.py migrate --noinput
 echo "📁 Recopilando archivos estáticos..."
 python manage.py collectstatic --noinput
 
-# Limpiar OAuth duplicados (CRÍTICO para evitar error 500)
-echo "🧹 Limpiando OAuth duplicados..."
-python manage.py fix_oauth
+# Configurar OAuth automáticamente
+echo "🔧 Configurando OAuth para producción..."
+python manage.py setup_oauth
 
 # Configurar datos iniciales (incluyendo superusuario)
 echo "👤 Configurando datos iniciales..."
