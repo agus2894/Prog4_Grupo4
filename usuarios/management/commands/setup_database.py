@@ -63,14 +63,9 @@ class Command(BaseCommand):
                     self.style.ERROR(f'❌ Error cargando datos: {str(e)}')
                 )
 
-        # Configurar aplicaciones sociales OAuth
-        self.stdout.write('🔐 Configurando autenticación OAuth...')
-        try:
-            self.setup_oauth()
-        except Exception as e:
-            self.stdout.write(
-                self.style.WARNING(f'⚠️  Error configurando OAuth: {str(e)}')
-            )
+        # Configurar aplicaciones sociales OAuth - REMOVIDO
+        # Ahora se maneja con el comando fix_oauth para evitar duplicados
+        self.stdout.write('🔐 OAuth se configura con comando fix_oauth')
 
         # Verificar usuarios creados
         usuarios = User.objects.filter(is_superuser=True)
