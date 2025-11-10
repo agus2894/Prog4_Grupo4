@@ -79,12 +79,10 @@ class Command(BaseCommand):
         )
 
     def setup_oauth(self):
-        """Configura las aplicaciones OAuth de Google y GitHub"""
+        """Configura la aplicación OAuth de Google"""
         # Obtener variables de entorno
         google_client_id = os.getenv('GOOGLE_CLIENT_ID', '').strip()
         google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET', '').strip()
-        github_client_id = os.getenv('GITHUB_CLIENT_ID', '').strip()
-        github_client_secret = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
         # Obtener sitio y configurar dominio correcto
         site = Site.objects.get_current()
@@ -104,7 +102,7 @@ class Command(BaseCommand):
         self.stdout.write(f'   🌐 Sitio configurado: {site.domain}')
 
         # Limpiar aplicaciones existentes para evitar duplicados
-        SocialApp.objects.filter(provider__in=['google', 'github']).delete()
+        SocialApp.objects.filter(provider='google').delete()
 
         # Configurar Google OAuth
         if google_client_id and google_client_secret:
@@ -118,16 +116,3 @@ class Command(BaseCommand):
             self.stdout.write('   ✅ Google OAuth configurado')
         else:
             self.stdout.write('   ⚠️  Google OAuth no configurado (faltan variables de entorno)')
-
-        # Configurar GitHub OAuth
-        if github_client_id and github_client_secret:
-            github_app = SocialApp.objects.create(
-                provider='github',
-                name='GitHub',
-                client_id=github_client_id,
-                secret=github_client_secret,
-            )
-            github_app.sites.add(site)
-            self.stdout.write('   ✅ GitHub OAuth configurado')
-        else:
-            self.stdout.write('   ⚠️  GitHub OAuth no configurado (faltan variables de entorno)')

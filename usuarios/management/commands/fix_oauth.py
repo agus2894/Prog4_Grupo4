@@ -38,8 +38,6 @@ class Command(BaseCommand):
         # Recrear aplicaciones OAuth desde variables de entorno
         google_client_id = os.getenv('GOOGLE_CLIENT_ID', '').strip()
         google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET', '').strip()
-        github_client_id = os.getenv('GITHUB_CLIENT_ID', '').strip()
-        github_client_secret = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
         
         # Crear Google OAuth
         if google_client_id and google_client_secret:
@@ -53,19 +51,6 @@ class Command(BaseCommand):
             self.stdout.write('✅ Google OAuth recreado')
         else:
             self.stdout.write('⚠️  Google OAuth no configurado')
-        
-        # Crear GitHub OAuth
-        if github_client_id and github_client_secret:
-            github_app = SocialApp.objects.create(
-                provider='github',
-                name='GitHub',
-                client_id=github_client_id,
-                secret=github_client_secret,
-            )
-            github_app.sites.add(site)
-            self.stdout.write('✅ GitHub OAuth recreado')
-        else:
-            self.stdout.write('⚠️  GitHub OAuth no configurado')
         
         # Verificar resultado
         final_apps = SocialApp.objects.all()
