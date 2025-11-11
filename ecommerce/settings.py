@@ -17,6 +17,7 @@ SECRET_KEY = env("SECRET_KEY", default="dev-secret-no-usar-en-prod")
 DEBUG = env("DEBUG", default=True)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
+OPENAI_API_KEY = "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"
 
 INSTALLED_APPS = [
     "django.contrib.admin",

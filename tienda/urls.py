@@ -1,4 +1,5 @@
 from django.urls import path
+from .views import noticias_view
 from .views import (
     tienda_index,
     ProductoListView, ProductoCreateView,
@@ -6,7 +7,7 @@ from .views import (
     ver_carrito, agregar_al_carrito, actualizar_carrito,
     eliminar_del_carrito, vaciar_carrito, carrito_count,
     checkout, mis_pedidos, pedido_detalle,
-    time_view
+    time_view,
 )
 
 
@@ -31,4 +32,5 @@ urlpatterns = [
     path("pedidos/", mis_pedidos, name="mis_pedidos"),
     path("pedidos/<int:pedido_id>/", pedido_detalle, name="pedido_detalle"),
     path("tiempo/", time_view, name="tiempo"),
+    path("noticias/", noticias_view, name="noticias"),
 ]

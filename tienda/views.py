@@ -4,8 +4,13 @@ from .serializers import ProductoSerializer
 import requests
 from django.shortcuts import render
 from datetime import datetime
+from django.conf import settings
 import json
+import os
+from openai import OpenAI
 
+from django.conf import settings
+from django.shortcuts import render
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.decorators import method_decorator
@@ -502,3 +507,30 @@ def time_view(request):
     }
 
     return render(request, "tienda/tiempo.html", context)
+
+def noticias_view(request):
+    noticias = cache.get('noticias_pesca')
+    if noticias:
+        # Si ya hay cache, usamos eso
+        return render(request, "tienda/noticias.html", {"data": noticias})
+    
+    # Si no hay cache, hacemos la llamada a OpenAI
+    try:
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": "Escribe 5 noticias recientes de pesca en Argentina en JSON con title, summary, date y url"}
+            ],
+            max_tokens=500
+        )
+        text = response.choices[0].message.content
+        noticias = json.loads(text)
+        
+        # Guardamos en cache por 5 horas (18000 segundos)
+        cache.set('noticias_pesca', noticias, timeout=18000)
+    
+    except Exception as e:
+        noticias = []
+    
+    return render(request, "tienda/noticias.html", {"data": noticias})

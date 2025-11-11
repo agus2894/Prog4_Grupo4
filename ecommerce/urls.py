@@ -9,6 +9,8 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 from tienda.views import time_view
+from tienda.views import noticias_view
+
 
 
 # Configurar títulos del admin
@@ -45,6 +47,7 @@ urlpatterns = [
     path("presupuesto/", include("presupuesto.urls")),
     path("telegram/", include("telegram_bot.urls")),
     path("tiempo/", time_view, name="tiempo"),
+    path("noticias/", noticias_view, name="noticias"),
 ]
 
 

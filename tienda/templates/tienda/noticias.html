@@ -1,0 +1,27 @@
+{% extends "tienda/base.html" %}
+
+{% block title %}Noticias de Pesca - Argentina{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">📰 Noticias de Pesca Argentina (Generadas por ChatGPT)</h1>
+
+    {% if error %}
+        <div class="alert alert-danger">⚠️ {{ error }}</div>
+    {% else %}
+        {% if data %}
+            <ul class="list-group">
+                {% for n in data %}
+                    <li class="list-group-item">
+                        <a href="{{ n.url }}" target="_blank"><strong>{{ n.title }}</strong></a>
+                        <p>{{ n.summary }}</p>
+                        <small class="text-muted">{{ n.date }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No hay noticias disponibles.</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

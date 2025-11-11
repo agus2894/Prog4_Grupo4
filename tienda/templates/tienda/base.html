@@ -33,7 +33,22 @@
                                 <i class="fas fa-comments"></i> Chat
                             </a>
                         </li>
-                        
+
+                        <!-- Link Tiempo y Mareas -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'tienda:tiempo' %}">
+                                🌦 Tiempo y Mareas
+                            </a>
+                        </li>
+
+                        <!-- Link Noticias -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'tienda:noticias' %}">
+                                📰 Noticias
+                            </a>
+                        </li>
+
+                        <!-- Carrito -->
                         <li class="nav-item">
                             <a class="nav-link position-relative" href="{% url 'tienda:ver_carrito' %}">
                                 <i class="fas fa-shopping-cart"></i> Carrito
@@ -42,25 +57,28 @@
                                 </span>
                             </a>
                         </li>
-                        
+
+                        <!-- Mis pedidos -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'tienda:mis_pedidos' %}">
                                 <i class="fas fa-box"></i> Mis Pedidos
                             </a>
                         </li>
-                        
+
+                        <!-- Presupuestos -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'presupuesto:lista' %}">
                                 <i class="fas fa-file-invoice"></i> Presupuestos
                             </a>
                         </li>
-                        
+
+                        <!-- Telegram -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'telegram_bot:vincular' %}">
                                 <i class="fab fa-telegram"></i> Telegram
                             </a>
                         </li>
-                        
+
                         {% if user.profile.is_admin %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'tienda:dashboard_list' %}">
@@ -68,15 +86,18 @@
                                 </a>
                             </li>
                         {% endif %}
-                        
+
+                        <!-- Perfil -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-user"></i> {{ user.username }}
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{% url 'account_logout' %}">
-                                    <i class="fas fa-sign-out-alt"></i> Salir
-                                </a></li>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'account_logout' %}">
+                                        <i class="fas fa-sign-out-alt"></i> Salir
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     {% else %}
@@ -136,12 +157,10 @@
             .catch(error => console.log('Error:', error));
     }
 
-    // Actualizar al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
         actualizarContadorCarrito();
     });
 
-    // Actualizar cada 30 segundos
     setInterval(actualizarContadorCarrito, 30000);
     </script>
     {% endif %}
