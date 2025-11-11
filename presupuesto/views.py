@@ -53,12 +53,17 @@ def enviar_email_presupuesto(presupuesto, request):
             'application/pdf'
         )
         
-        # Enviar email
-        email.send()
-        return True
+        # Enviar email con manejo de errores mejorado
+        try:
+            email.send(fail_silently=False)
+            print(f"Email de presupuesto enviado correctamente a {presupuesto.user.email}")
+            return True
+        except Exception as email_error:
+            print(f"Error específico enviando email: {email_error}")
+            return False
         
     except Exception as e:
-        print(f"Error enviando email: {e}")
+        print(f"Error general en envío de email: {e}")
         return False
 
 

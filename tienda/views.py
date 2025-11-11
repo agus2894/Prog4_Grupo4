@@ -1,5 +1,6 @@
 import json
 import os
+import logging
 from datetime import datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -22,6 +23,8 @@ from .models import Producto, Carrito, CarritoItem
 from .serializers import ProductoSerializer
 from .forms import ProductoForm
 from telegram_bot.utils import enviar_pedido_telegram
+
+logger = logging.getLogger(__name__)
 
 
 def enviar_email_pedido(pedido, accion, request):
@@ -74,12 +77,17 @@ def enviar_email_pedido(pedido, accion, request):
         )
         email.content_subtype = 'html'
         
-        # Enviar email
-        email.send()
-        return True
+        # Enviar email con timeout
+        try:
+            email.send(fail_silently=False)
+            logger.info(f"Email de pedido enviado correctamente a {pedido.user.email}")
+            return True
+        except Exception as email_error:
+            logger.error(f"Error específico enviando email: {email_error}")
+            return False
         
     except Exception as e:
-        print(f"Error enviando email de pedido: {e}")
+        logger.error(f"Error general en envío de email de pedido: {e}")
         return False
 
 

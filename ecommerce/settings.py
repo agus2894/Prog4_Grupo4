@@ -189,7 +189,14 @@ SOCIALACCOUNT_PROVIDERS = {
 # ============================================
 # CONFIGURACIÓN DE EMAIL
 # ============================================
-EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+# En producción (Render), usar console backend para evitar timeouts SMTP
+if 'RENDER' in os.environ:
+    # Producción: No enviar emails reales para evitar bloqueos
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    # Desarrollo local: Usar SMTP real
+    EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env("EMAIL_PORT", default=587, cast=int)
 EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True, cast=bool)
