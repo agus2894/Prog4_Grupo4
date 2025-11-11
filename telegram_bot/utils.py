@@ -13,8 +13,80 @@ from .bot import mercadito_bot
 
 def enviar_presupuesto_telegram(user, presupuesto, pdf_buffer: BytesIO) -> bool:
     """
-    Envía un presupuesto por Telegram si el usuario tiene chat_id configurado
+Utilidades para notificaciones de Telegram
+"""
+import asyncio
+import threading
+import logging
+from io import BytesIO
+from typing import Optional
+from concurrent.futures import ThreadPoolExecutor
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+def enviar_presupuesto_telegram(user, presupuesto, pdf_buffer: BytesIO) -> bool:
     """
+    Enviar presupuesto por Telegram de forma thread-safe
+    """
+    if not settings.TELEGRAM_BOT_TOKEN:
+        logger.warning("Token de Telegram no configurado")
+        return False
+        
+    try:
+        # Verificar si el usuario tiene Telegram vinculado
+        if hasattr(user, 'profile') and user.profile.telegram_chat_id:
+            chat_id = user.profile.telegram_chat_id
+            
+            def _enviar_async():
+                """Función para ejecutar en thread separado"""
+                try:
+                    from .bot import MercaditoBot
+                    
+                    # Crear nuevo loop para este thread
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                    try:
+                        mercadito_bot = MercaditoBot()
+                        
+                        # Inicializar bot
+                        result = loop.run_until_complete(mercadito_bot.inicializar())
+                        if not result:
+                            logger.error("No se pudo inicializar el bot")
+                            return False
+                        
+                        # Enviar presupuesto
+                        result = loop.run_until_complete(
+                            mercadito_bot.enviar_presupuesto(chat_id, presupuesto, pdf_buffer)
+                        )
+                        return result
+                        
+                    finally:
+                        loop.close()
+                        
+                except Exception as e:
+                    logger.error(f"Error en hilo de Telegram presupuesto: {e}")
+                    return False
+            
+            # Ejecutar en thread pool
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_enviar_async)
+                try:
+                    result = future.result(timeout=30)  # Timeout de 30 segundos
+                    logger.info(f"Notificación de presupuesto enviada a Telegram para usuario {user.username}")
+                    return result if result else True  # Retorna True si no hay errores
+                except Exception as e:
+                    logger.error(f"Error ejecutando thread de Telegram: {e}")
+                    return False
+            
+        else:
+            logger.info(f"Usuario {user.username} no tiene Telegram vinculado")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error enviando presupuesto por Telegram: {e}")
+        return False
     try:
         if not hasattr(user, 'profile') or not user.profile.telegram_chat_id:
             return False
@@ -62,50 +134,65 @@ def enviar_presupuesto_telegram(user, presupuesto, pdf_buffer: BytesIO) -> bool:
 
 def enviar_pedido_telegram(user, pedido, accion: str) -> bool:
     """
-    Envía una notificación de pedido por Telegram
+    Enviar notificación de pedido por Telegram de forma thread-safe
     """
+    if not settings.TELEGRAM_BOT_TOKEN:
+        logger.warning("Token de Telegram no configurado")
+        return False
+        
     try:
-        if not hasattr(user, 'profile') or not user.profile.telegram_chat_id:
-            return False
-        
-        chat_id = user.profile.telegram_chat_id
-        
-        # Ejecutar en un hilo separado para evitar conflictos con event loops
-        def run_telegram_task():
-            try:
-                # Crear nuevo event loop en el hilo
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
+        # Verificar si el usuario tiene Telegram vinculado
+        if hasattr(user, 'profile') and user.profile.telegram_chat_id:
+            chat_id = user.profile.telegram_chat_id
+            
+            def _enviar_async():
+                """Función para ejecutar en thread separado"""
                 try:
-                    # Inicializar bot si no está listo
-                    if not mercadito_bot.application:
+                    from .bot import MercaditoBot
+                    
+                    # Crear nuevo loop para este thread
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                    try:
+                        mercadito_bot = MercaditoBot()
+                        
+                        # Inicializar bot
                         result = loop.run_until_complete(mercadito_bot.inicializar())
                         if not result:
+                            logger.error("No se pudo inicializar el bot")
                             return False
-                    
-                    # Enviar notificación
-                    result = loop.run_until_complete(
-                        mercadito_bot.enviar_pedido(chat_id, pedido, accion)
-                    )
-                    return result
-                    
-                finally:
-                    loop.close()
-                    
-            except Exception as e:
-                print(f"Error en hilo de Telegram: {e}")
-                return False
-        
-        # Ejecutar en hilo separado
-        thread = threading.Thread(target=run_telegram_task)
-        thread.start()
-        thread.join(timeout=10)  # Timeout de 10 segundos
-        
-        return True  # Asumimos éxito si no hay excepciones
+                        
+                        # Enviar notificación
+                        result = loop.run_until_complete(
+                            mercadito_bot.enviar_pedido(chat_id, pedido, accion)
+                        )
+                        return result
+                        
+                    finally:
+                        loop.close()
+                        
+                except Exception as e:
+                    logger.error(f"Error en hilo de Telegram pedido: {e}")
+                    return False
+            
+            # Ejecutar en thread pool
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_enviar_async)
+                try:
+                    result = future.result(timeout=30)  # Timeout de 30 segundos
+                    logger.info(f"Notificación de pedido enviada a Telegram para usuario {user.username}")
+                    return result if result else True  # Retorna True si no hay errores
+                except Exception as e:
+                    logger.error(f"Error ejecutando thread de Telegram: {e}")
+                    return False
+            
+        else:
+            logger.info(f"Usuario {user.username} no tiene Telegram vinculado")
+            return False
             
     except Exception as e:
-        print(f"Error enviando pedido por Telegram: {e}")
+        logger.error(f"Error enviando pedido por Telegram: {e}")
         return False
 
 

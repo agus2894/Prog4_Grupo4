@@ -23,9 +23,24 @@ DEBUG = 'RENDER' not in os.environ
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS = [RENDER_EXTERNAL_HOSTNAME]
+    CSRF_TRUSTED_ORIGINS = [f"https://{RENDER_EXTERNAL_HOSTNAME}"]
 else:
     # Para desarrollo local, priorizar localhost para OAuth
     ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+    # Permitir cualquier puerto local para CSRF
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8001",
+        "http://127.0.0.1:8001", 
+        "http://localhost:8002",
+        "http://127.0.0.1:8002",
+        "http://localhost:8003",
+        "http://127.0.0.1:8003",
+        "http://localhost:9000",
+        "http://127.0.0.1:9000",
+        "http://localhost:3000",  # Por si usás frontend separado
+    ]
 
 
 INSTALLED_APPS = [
