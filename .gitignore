@@ -16,6 +16,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Scripts de desarrollo local
+runserver.sh
+runtime.txt
+
 # Archivos de cache Python (se regeneran automáticamente)
 __pycache__/
 *.pyc

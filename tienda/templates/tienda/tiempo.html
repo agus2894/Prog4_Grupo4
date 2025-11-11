@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">🌊 Tiempo y Mareas</h1>
+    <h1 class="mb-4"> Tiempo y Mareas</h1>
 
     <!-- Selector de lugar -->
     <form method="get" class="mb-4">
@@ -39,7 +39,7 @@
             
             <div class="col-md-6">
                 <div class="card text-bg-warning mb-3">
-                    <div class="card-header">🌙 Fase de la Luna</div>
+                    <div class="card-header"> Fase de la Luna</div>
                     <div class="card-body">
                         <p>{{ data.luna }}</p>
                     </div>
@@ -49,7 +49,7 @@
 
         <!-- Próximas Mareas -->
         <div class="card mb-4">
-            <div class="card-header">🌊 Próximas Mareas</div>
+            <div class="card-header"> Próximas Mareas</div>
             <div class="card-body">
                 {% if data.mareas %}
                     <ul class="list-group list-group-flush">
@@ -75,11 +75,11 @@
         </div>
 
         <!-- Tablero de Picos Altos y Bajos -->
-        <h2 class="mb-3 text-center">📊 Tablero de Mareas y Picos de Pesca</h2>
+        <h2 class="mb-3 text-center"> Tablero de Mareas y Picos de Pesca</h2>
         <div class="row">
             <div class="col-md-6">
                 <div class="card text-bg-success mb-3 shadow">
-                    <div class="card-header">🌊 Picos Altos (Mareas Altas)</div>
+                    <div class="card-header"> Picos Altos (Mareas Altas)</div>
                     <div class="card-body">
                         {% if data.extremos %}
                             <ul class="list-group list-group-flush">
@@ -122,7 +122,7 @@
 
         <!-- Gráfico de Mareas -->
         <div class="card mt-4 shadow">
-            <div class="card-header">📈 Gráfico de Mareas (Altura vs Hora)</div>
+            <div class="card-header">  Gráfico de Mareas (Altura vs Hora)</div>
             <div class="card-body">
                 <canvas id="graficoMareas" height="120"></canvas>
             </div>

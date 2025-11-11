@@ -1,0 +1,396 @@
+{% extends "tienda/base.html" %}
+{% load static %}
+{% load analytics_filters %}
+
+{% block title %}🔍 Comparación de Precios - {{ producto.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'analytics:dashboard_ia' %}">
+                            <i class="fas fa-robot me-1"></i>Dashboard IA
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Comparación de Precios</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Producto Principal -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            {% if producto.image %}
+                <img src="{{ producto.image.url }}" class="img-fluid rounded shadow" alt="{{ producto.title }}">
+            {% else %}
+                <div class="bg-light rounded shadow d-flex align-items-center justify-content-center" style="height: 300px;">
+                    <i class="fas fa-image text-muted fa-4x"></i>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            <h1 class="h3 mb-3">{{ producto.title }}</h1>
+            <p class="text-muted mb-3">{{ producto.marca }}</p>
+            
+            <div class="card bg-light border-0 mb-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h3 class="text-success">${{ producto.price }}</h3>
+                            <p class="text-muted mb-0">Precio Actual</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3 class="text-primary">${{ analisis.precio_promedio|floatformat:2 }}</h3>
+                            <p class="text-muted mb-0">Precio Promedio</p>
+                        </div>
+                        <div class="col-md-4">
+                            {% if analisis.porcentaje_ahorro > 0 %}
+                                <h3 class="text-success">{{ analisis.porcentaje_ahorro|floatformat:0 }}%</h3>
+                                <p class="text-muted mb-0">Ahorro</p>
+                            {% else %}
+                                <h3 class="text-danger">{{ analisis.porcentaje_ahorro|floatformat:0 }}%</h3>
+                                <p class="text-muted mb-0">Sobreprecio</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recomendación de la IA -->
+            <div class="alert border-0 shadow-sm
+                {% if analisis.recomendacion == 'COMPRA_INMEDIATA' %}alert-success
+                {% elif analisis.recomendacion == 'BUEN_PRECIO' %}alert-info
+                {% elif analisis.recomendacion == 'PRECIO_JUSTO' %}alert-warning
+                {% else %}alert-danger{% endif %}" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        {% if analisis.recomendacion == 'COMPRA_INMEDIATA' %}
+                            <i class="fas fa-fire fa-2x text-success"></i>
+                        {% elif analisis.recomendacion == 'BUEN_PRECIO' %}
+                            <i class="fas fa-thumbs-up fa-2x text-info"></i>
+                        {% elif analisis.recomendacion == 'PRECIO_JUSTO' %}
+                            <i class="fas fa-balance-scale fa-2x text-warning"></i>
+                        {% else %}
+                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h5 class="alert-heading mb-1">
+                            Recomendación de la IA:
+                            {% if analisis.recomendacion == 'COMPRA_INMEDIATA' %}
+                                🔥 ¡COMPRA INMEDIATA!
+                            {% elif analisis.recomendacion == 'BUEN_PRECIO' %}
+                                👍 Buen Precio
+                            {% elif analisis.recomendacion == 'PRECIO_JUSTO' %}
+                                ⚖️ Precio Justo
+                            {% else %}
+                                ⚠️ Precio Alto
+                            {% endif %}
+                        </h5>
+                        <p class="mb-0">{{ analisis.justificacion }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Tendencias -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        Tendencia de Precios (Últimos 30 días)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTendencias" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparación con Productos Similares -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-balance-scale text-warning me-2"></i>
+                        Comparación con Productos Similares
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if productos_similares %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Marca</th>
+                                    <th>Precio</th>
+                                    <th>Diferencia</th>
+                                    <th>IA Score</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for similar in productos_similares %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if similar.image %}
+                                                <img src="{{ similar.image.url }}" class="me-2" 
+                                                     style="width: 40px; height: 40px; object-fit: cover;" 
+                                                     alt="{{ similar.title }}">
+                                            {% endif %}
+                                            <span>{{ similar.title|truncatechars:50 }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ similar.marca }}</td>
+                                    <td class="fw-bold">${{ similar.price }}</td>
+                                    <td>
+                                        {% if similar.price < producto.price %}
+                                            <span class="text-success">
+                                                <i class="fas fa-arrow-down me-1"></i>
+                                                ${{ producto.price|sub:similar.price|floatformat:2 }} menos
+                                            </span>
+                                        {% elif similar.price > producto.price %}
+                                            <span class="text-danger">
+                                                <i class="fas fa-arrow-up me-1"></i>
+                                                ${{ similar.price|sub:producto.price|floatformat:2 }} más
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">Igual precio</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress me-2" style="width: 80px; height: 8px;">
+                                                <div class="progress-bar bg-primary" 
+                                                     style="width: {{ similar.ia_score|mul:10 }}%"></div>
+                                            </div>
+                                            <small>{{ similar.ia_score|floatformat:1 }}/10</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'tienda:detalle_producto' similar.id %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No se encontraron productos similares para comparar.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Análisis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history text-info me-2"></i>
+                        Historial de Análisis IA
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if historial_analisis %}
+                    <div class="timeline">
+                        {% for analisis_hist in historial_analisis %}
+                        <div class="timeline-item mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3">
+                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-robot text-white"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">Análisis {{ analisis_hist.fecha_analisis|date:"d/m/Y H:i" }}</h6>
+                                                    <p class="mb-1">{{ analisis_hist.justificacion }}</p>
+                                                    <small class="text-muted">
+                                                        Precio: ${{ analisis_hist.precio_analizado }} | 
+                                                        Ahorro: {{ analisis_hist.porcentaje_ahorro|floatformat:0 }}%
+                                                    </small>
+                                                </div>
+                                                <span class="badge 
+                                                    {% if analisis_hist.recomendacion == 'COMPRA_INMEDIATA' %}bg-success
+                                                    {% elif analisis_hist.recomendacion == 'BUEN_PRECIO' %}bg-info
+                                                    {% elif analisis_hist.recomendacion == 'PRECIO_JUSTO' %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {{ analisis_hist.recomendacion }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Este es el primer análisis de este producto.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="{% url 'tienda:detalle_producto' producto.id %}" class="btn btn-primary me-3">
+                <i class="fas fa-eye me-2"></i>Ver Producto
+            </a>
+            <button class="btn btn-success" onclick="agregarAlCarrito({{ producto.id }})">
+                <i class="fas fa-cart-plus me-2"></i>Agregar al Carrito
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de tendencias
+    const ctx = document.getElementById('chartTendencias').getContext('2d');
+    
+    // Datos simulados (en producción vendrían del backend)
+    const tendenciaData = {
+        labels: [
+            {% for i in "0123456789012345678901234567890"|slice:":30" %}
+                '{{ "now"|date:"d/m"|add:i }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Precio ($)',
+            data: [
+                {% for i in "0123456789012345678901234567890"|slice:":30" %}
+                    {{ producto.price|add:"-30"|add:i }},
+                {% endfor %}
+            ],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: tendenciaData,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Precio: $' + context.parsed.y;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+
+function agregarAlCarrito(productoId) {
+    // Aquí implementarías la lógica para agregar al carrito
+    fetch('/tienda/agregar-carrito/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            producto_id: productoId,
+            cantidad: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('¡Producto agregado al carrito!');
+        }
+    });
+}
+</script>
+
+<style>
+.timeline-item {
+    position: relative;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 50px;
+    width: 2px;
+    height: calc(100% - 10px);
+    background: #dee2e6;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .timeline-item .d-flex {
+        flex-direction: column;
+    }
+    
+    .timeline-item .flex-shrink-0 {
+        align-self: flex-start;
+        margin-bottom: 10px;
+    }
+}
+</style>
+{% endblock %}

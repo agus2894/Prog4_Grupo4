@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+import hashlib
 
 
 class Producto(models.Model):
@@ -9,9 +10,80 @@ class Producto(models.Model):
     marca = models.CharField(max_length=100, blank=True, default="Generico")
     price = models.DecimalField(max_digits=12, decimal_places=2)
     stock = models.IntegerField()
-    image = models.ImageField(upload_to='productos/', blank=True, null=True, help_text="Imagen del producto")
+    image = models.URLField(blank=True, null=True, help_text="URL de la imagen del producto")
     created_at = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
+
+    def get_image_url(self):
+        """Retorna la imagen del producto o una imagen placeholder automática"""
+        if self.image:
+            return self.image
+        
+        # Generar imagen placeholder inteligente basada en el producto
+        title_lower = self.title.lower()
+        
+        # Detectar categorías específicas de equipamiento de pesca
+        if any(word in title_lower for word in ['caña', 'rod', 'vara', 'telescópica']):
+            category = 'fishing+rod'
+        elif any(word in title_lower for word in ['reel', 'carrete', 'frontal', 'rotativo']):
+            category = 'fishing+reel'  
+        elif any(word in title_lower for word in ['anzuelo', 'hook', 'círculo', 'j-hook']):
+            category = 'fishing+hook'
+        elif any(word in title_lower for word in ['carnada', 'señuelo', 'artificial', 'spinner', 'cuchara']):
+            category = 'fishing+lure'
+        elif any(word in title_lower for word in ['plomada', 'peso', 'sinker', 'pirámide']):
+            category = 'fishing+weight'
+        elif any(word in title_lower for word in ['línea', 'nylon', 'monofilamento', 'multifilamento']):
+            category = 'fishing+line'
+        elif any(word in title_lower for word in ['caja', 'organizadora', 'tackle+box']):
+            category = 'tackle+box'
+        elif any(word in title_lower for word in ['silla', 'chair', 'asiento']):
+            category = 'fishing+chair'
+        elif any(word in title_lower for word in ['red', 'net', 'landing']):
+            category = 'fishing+net'
+        elif any(word in title_lower for word in ['lombriz', 'carnada+viva', 'gusano']):
+            category = 'fishing+bait'
+        else:
+            category = 'fishing+equipment'  # Equipamiento genérico de pesca
+        
+        # Usar un seed basado en el ID para consistencia
+        seed = f"{category}-{self.id}" if hasattr(self, 'id') and self.id else category
+        
+        # Unsplash con fallback a Picsum si falla
+        return f"https://source.unsplash.com/400x300/?{category}"
+    
+    def get_thumbnail_url(self):
+        """Retorna una versión thumbnail de la imagen"""
+        if self.image:
+            return self.image
+        
+        # Misma lógica para equipamiento de pesca en thumbnail
+        title_lower = self.title.lower()
+        
+        if any(word in title_lower for word in ['caña', 'rod', 'vara', 'telescópica']):
+            category = 'fishing+rod'
+        elif any(word in title_lower for word in ['reel', 'carrete', 'frontal', 'rotativo']):
+            category = 'fishing+reel'  
+        elif any(word in title_lower for word in ['anzuelo', 'hook', 'círculo', 'j-hook']):
+            category = 'fishing+hook'
+        elif any(word in title_lower for word in ['carnada', 'señuelo', 'artificial', 'spinner', 'cuchara']):
+            category = 'fishing+lure'
+        elif any(word in title_lower for word in ['plomada', 'peso', 'sinker', 'pirámide']):
+            category = 'fishing+weight'
+        elif any(word in title_lower for word in ['línea', 'nylon', 'monofilamento', 'multifilamento']):
+            category = 'fishing+line'
+        elif any(word in title_lower for word in ['caja', 'organizadora', 'tackle+box']):
+            category = 'tackle+box'
+        elif any(word in title_lower for word in ['silla', 'chair', 'asiento']):
+            category = 'fishing+chair'
+        elif any(word in title_lower for word in ['red', 'net', 'landing']):
+            category = 'fishing+net'
+        elif any(word in title_lower for word in ['lombriz', 'carnada+viva', 'gusano']):
+            category = 'fishing+bait'
+        else:
+            category = 'fishing+equipment'
+        
+        return f"https://source.unsplash.com/200x150/?{category}"
 
     def __str__(self):
         return f"{self.title} (Stock: {self.stock})"
@@ -22,6 +94,10 @@ class Producto(models.Model):
             models.Index(fields=['title']),
             models.Index(fields=['price']),
             models.Index(fields=['active']),
+            models.Index(fields=['marca']),
+            models.Index(fields=['stock']),
+            models.Index(fields=['active', 'stock']),  # Índice compuesto para consultas frecuentes
+            models.Index(fields=['seller', 'active']),  # Para dashboard de vendedor
         ]
 
 

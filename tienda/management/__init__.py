@@ -1,0 +1,1 @@
+# Archivo vacío requerido por Django

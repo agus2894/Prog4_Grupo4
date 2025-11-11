@@ -1,0 +1,346 @@
+{% extends "tienda/base.html" %}
+{% load static %}
+{% load analytics_filters %}
+
+{% block title %}🤖 Dashboard de IA - Recomendaciones Inteligentes{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header del Dashboard -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow-lg">
+                <div class="card-body text-center py-3">
+                    <h1 class="display-4 fw-bold mb-3">
+                        Dashboard
+                    </h1>
+                    <p class="lead mb-0">
+                        Recomendaciones de precios
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas del Usuario -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-3">
+                        <i class="fas fa-eye fa-3x"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ stats.productos_vistos }}</h4>
+                    <p class="text-muted mb-0">Productos Vistos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-3">
+                        <i class="fas fa-shopping-bag fa-3x"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ stats.productos_comprados }}</h4>
+                    <p class="text-muted mb-0">Productos Comprados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-3">
+                        <i class="fas fa-clock fa-3x"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ stats.tiempo_total|floatformat:0 }}s</h4>
+                    <p class="text-muted mb-0">Tiempo Navegando</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-info mb-3">
+                        <i class="fas fa-brain fa-3x"></i>
+                    </div>
+                    <h4 class="fw-bold">{{ carrito_inteligente.score_intencion_compra|floatformat:2 }}</h4>
+                    <p class="text-muted mb-0">IA</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carrito Inteligente Analysis -->
+    {% if carrito_inteligente.score_intencion_compra > 0.5 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-success border-0 shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-lightbulb fa-2x"></i>
+                    </div>
+                    <div>
+                        <h5 class="alert-heading mb-1">🎯 ¡La IA detectó alta intención de compra!</h5>
+                        <p class="mb-0">
+                            Basado en tu comportamiento, tienes un 
+                            <strong>{{ carrito_inteligente.score_intencion_compra|floatformat:0|mul:100 }}%</strong> 
+                            de probabilidad de realizar una compra pronto.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recomendaciones Personalizadas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h3 class="mb-0">
+                        Recomendaciones de IA
+                    </h3>
+                    <p class="text-muted mb-0">Productos seleccionados para vos</p>
+                </div>
+                <div class="card-body">
+                    {% if recomendaciones %}
+                    <div class="row g-3">
+                        {% for producto in recomendaciones %}
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="card border-0 shadow-sm h-100 producto-recomendado" data-producto-id="{{ producto.id }}">
+                                {% if producto.image %}
+                                    <img src="{{ producto.image.url }}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                                {% else %}
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                        <i class="fas fa-image text-muted fa-2x"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-2">{{ producto.title|truncatechars:40 }}</h6>
+                                    <p class="text-primary fw-bold mb-2">${{ producto.price }}</p>
+                                    <p class="small text-muted mb-2">{{ producto.marca }}</p>
+                                    <button class="btn btn-primary btn-sm w-100 btn-analizar-precio" 
+                                            data-producto-id="{{ producto.id }}">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        Analizar Precio
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-robot fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">La IA está aprendiendo ...</h5>
+                        <p class="text-muted"> Navega más productos para recibir recomendaciones</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ofertas Detectadas por IA -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h3 class="mb-0">
+                        <i class="fas fa-fire text-danger me-2"></i>
+                         Ofertas Detectadas por IA
+                    </h3>
+                    <p class="text-muted mb-0">Precios analizados</p>
+                </div>
+                <div class="card-body">
+                    {% if ofertas_ia %}
+                    <div class="row g-3">
+                        {% for oferta in ofertas_ia %}
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card border-0 shadow-sm h-100 border-start border-5 border-danger">
+                                {% if oferta.producto.image %}
+                                    <img src="{{ oferta.producto.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ oferta.producto.title|truncatechars:50 }}</h6>
+                                        {% if oferta.analisis.porcentaje_ahorro > 25 %}
+                                            <span class="badge bg-danger"> SÚPER OFERTA</span>
+                                        {% elif oferta.analisis.porcentaje_ahorro > 15 %}
+                                            <span class="badge bg-warning"> OFERTA</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="price-comparison mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Precio promedio:</span>
+                                            <span class="text-decoration-line-through">${{ oferta.analisis.precio_promedio|floatformat:2 }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="fw-bold">Precio actual:</span>
+                                            <span class="text-success fw-bold">${{ oferta.producto.price }}</span>
+                                        </div>
+                                        {% if oferta.analisis.porcentaje_ahorro %}
+                                        <div class="text-center mt-2">
+                                            <span class="badge bg-success">
+                                                ¡Ahorrás {{ oferta.analisis.porcentaje_ahorro|floatformat:0 }}%!
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <p class="small text-muted mb-3">{{ oferta.analisis.recomendacion }}</p>
+                                    
+                                    <div class="d-grid">
+                                        <a href="{% url 'analytics:comparar_precios' oferta.producto.id %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-chart-bar me-1"></i>
+                                            Ver Comparación
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted"> La IA está analizando precios...</h5>
+                        <p class="text-muted"> Encontraremos las mejores ofertas</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Análisis de Precios -->
+    <div class="modal fade" id="modalAnalisisPrecio" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Análisis Inteligente de Precios
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="contenidoAnalisis">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Analizando...</span>
+                        </div>
+                        <p class="mt-3">La IA está analizando precios...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para IA en tiempo real -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Registrar comportamiento del usuario
+    function registrarComportamiento(productoId, accion, tiempo = 0) {
+        fetch('{% url "analytics:registrar_comportamiento" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                producto_id: productoId,
+                accion: accion,
+                tiempo: tiempo
+            })
+        });
+    }
+
+    // Rastrear tiempo en productos
+    let tiempoInicioProducto = {};
+    
+    document.querySelectorAll('.producto-recomendado').forEach(card => {
+        const productoId = card.dataset.productoId;
+        
+        card.addEventListener('mouseenter', function() {
+            tiempoInicioProducto[productoId] = Date.now();
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            if (tiempoInicioProducto[productoId]) {
+                const tiempo = (Date.now() - tiempoInicioProducto[productoId]) / 1000;
+                if (tiempo > 2) { // Solo registrar si vio por más de 2 segundos
+                    registrarComportamiento(productoId, 'view', tiempo);
+                }
+            }
+        });
+    });
+
+    // Botones de análisis de precio
+    document.querySelectorAll('.btn-analizar-precio').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productoId = this.dataset.productoId;
+            registrarComportamiento(productoId, 'compare');
+            
+            // Mostrar modal de análisis
+            const modal = new bootstrap.Modal(document.getElementById('modalAnalisisPrecio'));
+            modal.show();
+            
+            // Simular análisis de precio (puedes expandir esto)
+            setTimeout(() => {
+                document.getElementById('contenidoAnalisis').innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h5>¡Análisis completado!</h5>
+                        <p>La IA ha analizado este producto. Ve a la sección de ofertas para ver los resultados.</p>
+                    </div>
+                `;
+            }, 2000);
+        });
+    });
+
+    // Auto-actualizar recomendaciones cada 30 segundos
+    setInterval(() => {
+        fetch('{% url "analytics:recomendaciones_ajax" %}')
+            .then(response => response.json())
+            .then(data => {
+                // Aquí puedes actualizar las recomendaciones dinámicamente
+                console.log('Recomendaciones actualizadas:', data);
+            });
+    }, 30000);
+});
+</script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.producto-recomendado {
+    cursor: pointer;
+}
+
+.price-comparison {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.border-start {
+    border-left-width: 5px !important;
+}
+
+/* Estilos personalizados para el dashboard de IA */
+</style>
+{% endblock %}

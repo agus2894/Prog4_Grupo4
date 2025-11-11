@@ -13,11 +13,20 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 
+# SECRET_KEY from environment
 SECRET_KEY = env("SECRET_KEY", default="dev-secret-no-usar-en-prod")
-DEBUG = env("DEBUG", default=True)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
-OPENAI_API_KEY = "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"
+# DEBUG cuando no esté en Render (en Render setearás env var)
+DEBUG = 'RENDER' not in os.environ
+
+# ALLOWED_HOSTS: usa el host que Render provee en RENDER_EXTERNAL_HOSTNAME
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS = [RENDER_EXTERNAL_HOSTNAME]
+else:
+    # Para desarrollo local, priorizar localhost para OAuth
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -33,12 +42,13 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.github",  # Temporalmente desactivado
     "tienda",
     "usuarios",
     "simple_chat",
     'presupuesto',
     'telegram_bot',
+    'analytics',  # Nueva app de IA y analytics
 ]
 
 SITE_ID = 1
@@ -53,15 +63,41 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
-
+# ============================================
+# CONFIGURACIÓN DE ALLAUTH
+# ============================================
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_UNIQUE_EMAIL = True
+
+# Configuración de autenticación social
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+# Configuración de campos de perfil social
+# SOCIALACCOUNT_ADAPTER = 'usuarios.adapters.CustomSocialAccountAdapter'  # Temporalmente desactivado
+
+# Forzar uso de localhost en desarrollo para OAuth
+if DEBUG:
+    # Asegurar que los callbacks de OAuth usen localhost
+    USE_X_FORWARDED_HOST = False
+    USE_X_FORWARDED_PORT = False
 
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+]
+
+# Agregar middleware de localhost solo en desarrollo
+if DEBUG:
+    MIDDLEWARE.append("ecommerce.middleware.ForceLocalhostMiddleware")
+
+MIDDLEWARE.extend([
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -69,7 +105,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-]
+])
 
 
 ROOT_URLCONF = "ecommerce.urls"
@@ -95,12 +131,23 @@ TEMPLATES = [
 WSGI_APPLICATION = "ecommerce.wsgi.application"
 
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=env("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
-        conn_max_age=600,
-    )
-}
+# ============================================
+# BASE DE DATOS
+# ============================================
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -117,9 +164,12 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Static files — WhiteNoise
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+if not DEBUG:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 MEDIA_URL = "/media/"
@@ -130,20 +180,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {
-            "client_id": env("GOOGLE_CLIENT_ID", default=""),
-            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
-            "key": "",
-        }
-    },
-    "github": {
-        "APP": {
-            "client_id": env("GITHUB_CLIENT_ID", default=""),
-            "secret": env("GITHUB_CLIENT_SECRET", default=""),
-            "key": "",
-        }
-    },
+    # Configuración a través de la base de datos solamente
 }
 
 

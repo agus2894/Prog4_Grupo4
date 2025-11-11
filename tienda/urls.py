@@ -33,4 +33,5 @@ urlpatterns = [
     path("pedidos/<int:pedido_id>/", pedido_detalle, name="pedido_detalle"),
     path("tiempo/", time_view, name="tiempo"),
     path("noticias/", noticias_view, name="noticias"),
+
 ]

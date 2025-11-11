@@ -1,16 +1,9 @@
-from rest_framework import viewsets, permissions
-from .models import Producto, Carrito, CarritoItem
-from .serializers import ProductoSerializer
-import requests
-from django.shortcuts import render
-from datetime import datetime
-from django.conf import settings
 import json
 import os
-from openai import OpenAI
+from datetime import datetime, timedelta
 
+import requests
 from django.conf import settings
-from django.shortcuts import render
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.decorators import method_decorator
@@ -22,52 +15,51 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import transaction
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
-from django.conf import settings
+from django.core.cache import cache
+
+from rest_framework import viewsets, permissions
+
+from .models import Producto, Carrito, CarritoItem
+from .serializers import ProductoSerializer
 from .forms import ProductoForm
 from telegram_bot.utils import enviar_pedido_telegram
+from openai import OpenAI
 
 
 def enviar_email_pedido(pedido, accion, request):
-    
     try:
-        # Configurar título y mensaje según la acción
         configuracion_emails = {
             'creado': {
                 'titulo': '¡Tu pedido ha sido confirmado!',
-                'mensaje': 'Hemos recibido tu pedido y está siendo procesado. Te mantendremos informado sobre su estado.',
+                'mensaje': 'Hemos recibido tu pedido y está siendo procesado.',
             },
             'procesando': {
                 'titulo': 'Tu pedido está siendo procesado',
-                'mensaje': 'Tu pedido está siendo preparado en nuestro almacén. Pronto será enviado.',
+                'mensaje': 'Tu pedido está siendo preparado en nuestro almacén.',
             },
             'enviado': {
                 'titulo': '¡Tu pedido está en camino!',
-                'mensaje': 'Tu pedido ha sido enviado y está en camino hacia tu dirección. Esperamos que lo recibas pronto.',
+                'mensaje': 'Tu pedido ha sido enviado y está en camino.',
             },
             'entregado': {
                 'titulo': '¡Pedido entregado exitosamente!',
-                'mensaje': '¡Tu pedido ha sido entregado! Esperamos que disfrutes tus productos. Si tienes algún problema, contáctanos.',
+                'mensaje': 'Esperamos que disfrutes tus productos.',
             },
             'cancelado': {
                 'titulo': 'Tu pedido ha sido cancelado',
-                'mensaje': 'Lamentamos informarte que tu pedido ha sido cancelado. Si tienes preguntas, contáctanos.',
+                'mensaje': 'Lamentamos informarte que tu pedido ha sido cancelado.',
             }
         }
-        
+
         config = configuracion_emails.get(accion, configuracion_emails['creado'])
-        
-        # Preparar contexto para el template
         context = {
             'pedido': pedido,
             'titulo_email': config['titulo'],
             'mensaje_email': config['mensaje'],
             'site_url': request.build_absolute_uri('/'),
         }
-        
-        # Renderizar template de email
+
         html_content = render_to_string('emails/pedido_email.html', context)
-        
-        # Crear email
         subject = f'[Mercadito] {config["titulo"]} - Pedido #{pedido.id}'
         email = EmailMessage(
             subject=subject,
@@ -76,11 +68,8 @@ def enviar_email_pedido(pedido, accion, request):
             to=[pedido.user.email],
         )
         email.content_subtype = 'html'
-        
-        # Enviar email
         email.send()
         return True
-        
     except Exception as e:
         print(f"Error enviando email de pedido: {e}")
         return False
@@ -110,6 +99,11 @@ class ProductoListView(ListView):
     template_name = "tienda/dashboard_list.html"
     context_object_name = "productos"
     paginate_by = 10
+
+    def get_queryset(self):
+        return Producto.objects.select_related('seller').filter(
+            seller=self.request.user
+        ).order_by('-created_at')
 
 
 @method_decorator([login_required, user_passes_test(admin_required)], name="dispatch")
@@ -152,37 +146,37 @@ class ProductoDeleteView(DeleteView):
 
 
 def tienda_index(request):
-    productos_list = Producto.objects.filter(active=True, stock__gt=0)
-    
+    productos_list = Producto.objects.select_related('seller').filter(active=True, stock__gt=0)
+
     search_query = request.GET.get('search', '')
     marca_filter = request.GET.get('marca', '')
     precio_min = request.GET.get('precio_min', '')
     precio_max = request.GET.get('precio_max', '')
-    orden = request.GET.get('orden', '')
-    
+    orden = request.GET.get('orden', 'recientes')
+
     if search_query:
         from django.db.models import Q
         productos_list = productos_list.filter(
-            Q(title__icontains=search_query) | 
+            Q(title__icontains=search_query) |
             Q(description__icontains=search_query) |
             Q(marca__icontains=search_query)
         )
-    
+
     if marca_filter:
         productos_list = productos_list.filter(marca__iexact=marca_filter)
-    
+
     if precio_min:
         try:
             productos_list = productos_list.filter(price__gte=float(precio_min))
         except ValueError:
             pass
-    
+
     if precio_max:
         try:
             productos_list = productos_list.filter(price__lte=float(precio_max))
         except ValueError:
             pass
-    
+
     if orden == 'precio_asc':
         productos_list = productos_list.order_by('price')
     elif orden == 'precio_desc':
@@ -191,19 +185,21 @@ def tienda_index(request):
         productos_list = productos_list.order_by('-created_at')
     elif orden == 'nombre':
         productos_list = productos_list.order_by('title')
-    
-    marcas_disponibles = Producto.objects.filter(active=True, stock__gt=0).values_list('marca', flat=True).distinct().order_by('marca')
-    
+
+    marcas_disponibles = Producto.objects.filter(
+        active=True, stock__gt=0
+    ).values_list('marca', flat=True).distinct().order_by('marca')
+
     paginator = Paginator(productos_list, 12)
     page = request.GET.get('page')
-    
+
     try:
         productos = paginator.page(page)
     except PageNotAnInteger:
         productos = paginator.page(1)
     except EmptyPage:
         productos = paginator.page(paginator.num_pages)
-    
+
     context = {
         'productos': productos,
         'search_query': search_query,
@@ -214,7 +210,7 @@ def tienda_index(request):
         'marcas_disponibles': marcas_disponibles,
         'total_resultados': paginator.count,
     }
-    
+
     return render(request, "tienda/index.html", context)
 
 
@@ -227,13 +223,7 @@ def get_or_create_carrito(user):
 def ver_carrito(request):
     carrito = get_or_create_carrito(request.user)
     items = carrito.items.select_related('producto').all()
-    
-    context = {
-        'carrito': carrito,
-        'items': items,
-        'total_items': carrito.total_items,
-        'total_price': carrito.total_price,
-    }
+    context = {'carrito': carrito, 'items': items}
     return render(request, 'tienda/carrito.html', context)
 
 
@@ -242,23 +232,18 @@ def agregar_al_carrito(request, producto_id):
     if request.method == 'POST':
         producto = get_object_or_404(Producto, id=producto_id, active=True)
         cantidad = int(request.POST.get('cantidad', 1))
-        
         if cantidad <= 0:
-            messages.error(request, 'La cantidad debe ser mayor a 0')
+            messages.error(request, 'Cantidad inválida')
             return redirect('tienda:index')
-        
         if cantidad > producto.stock:
-            messages.error(request, f'Solo hay {producto.stock} unidades disponibles')
+            messages.error(request, f'Solo hay {producto.stock} disponibles')
             return redirect('tienda:index')
-        
-        try:
-            with transaction.atomic():
-                carrito = get_or_create_carrito(request.user)
-                carrito.add_item(producto, cantidad)
-                messages.success(request, f'{producto.title} agregado al carrito')
-        except Exception as e:
-            messages.error(request, 'Error al agregar el producto al carrito')
-    
+
+        with transaction.atomic():
+            carrito = get_or_create_carrito(request.user)
+            carrito.add_item(producto, cantidad)
+            messages.success(request, f'{producto.title} agregado al carrito')
+
     return redirect('tienda:index')
 
 
@@ -268,17 +253,17 @@ def actualizar_carrito(request, item_id):
         carrito = get_or_create_carrito(request.user)
         item = get_object_or_404(CarritoItem, id=item_id, carrito=carrito)
         nueva_cantidad = int(request.POST.get('cantidad', 1))
-        
+
         if nueva_cantidad <= 0:
             item.delete()
             messages.success(request, f'{item.producto.title} eliminado del carrito')
         elif nueva_cantidad > item.producto.stock:
-            messages.error(request, f'Solo hay {item.producto.stock} unidades disponibles')
+            messages.error(request, f'Solo hay {item.producto.stock} disponibles')
         else:
             item.cantidad = nueva_cantidad
             item.save()
             messages.success(request, 'Carrito actualizado')
-    
+
     return redirect('tienda:ver_carrito')
 
 
@@ -286,9 +271,8 @@ def actualizar_carrito(request, item_id):
 def eliminar_del_carrito(request, item_id):
     carrito = get_or_create_carrito(request.user)
     item = get_object_or_404(CarritoItem, id=item_id, carrito=carrito)
-    producto_title = item.producto.title
     item.delete()
-    messages.success(request, f'{producto_title} eliminado del carrito')
+    messages.success(request, 'Producto eliminado del carrito')
     return redirect('tienda:ver_carrito')
 
 
@@ -311,30 +295,26 @@ def carrito_count(request):
 def checkout(request):
     carrito = get_or_create_carrito(request.user)
     items = carrito.items.select_related('producto').all()
-    
+
     if not items.exists():
         messages.error(request, 'Tu carrito está vacío')
         return redirect('tienda:ver_carrito')
-    
+
     if request.method == 'POST':
         direccion_envio = request.POST.get('direccion_envio', '').strip()
         telefono = request.POST.get('telefono', '').strip()
         notas = request.POST.get('notas', '').strip()
-        
+
         if not direccion_envio:
             messages.error(request, 'La dirección de envío es obligatoria')
-            return render(request, 'tienda/checkout.html', {
-                'carrito': carrito,
-                'items': items,
-                'total_price': carrito.total_price,
-            })
-        
+            return render(request, 'tienda/checkout.html', {'carrito': carrito, 'items': items})
+
         try:
             with transaction.atomic():
                 for item in items:
                     if item.cantidad > item.producto.stock:
                         raise ValueError(f'Stock insuficiente para {item.producto.title}')
-                
+
                 from .models import Pedido, PedidoItem
                 pedido = Pedido.objects.create(
                     user=request.user,
@@ -344,7 +324,7 @@ def checkout(request):
                     notas=notas,
                     estado='pendiente'
                 )
-                
+
                 for item in items:
                     PedidoItem.objects.create(
                         pedido=pedido,
@@ -352,51 +332,30 @@ def checkout(request):
                         cantidad=item.cantidad,
                         precio_unitario=item.producto.price
                     )
-                    
                     item.producto.stock -= item.cantidad
                     item.producto.save()
-                
+
                 carrito.clear()
-                
-                # Enviar notificaciones
-                email_enviado = enviar_email_pedido(pedido, 'creado', request)
-                telegram_enviado = enviar_pedido_telegram(request.user, pedido, 'creado')
-                
-                # Mensajes de confirmación
-                if email_enviado and telegram_enviado:
-                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente! Te hemos enviado confirmaciones por email y Telegram. 📧🤖')
-                elif email_enviado:
-                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente! Te hemos enviado un email de confirmación. 📧')
-                    if hasattr(request.user, 'profile') and request.user.profile.telegram_chat_id:
-                        messages.info(request, 'No se pudo enviar por Telegram. Revisa tu vinculación.')
-                elif telegram_enviado:
-                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente! Te hemos enviado confirmación por Telegram. 🤖')
-                    messages.info(request, 'No pudimos enviar el email de confirmación.')
-                else:
-                    messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente!')
-                    messages.info(request, 'No pudimos enviar las notificaciones, pero tu pedido está confirmado.')
-                
+
+                enviar_email_pedido(pedido, 'creado', request)
+                enviar_pedido_telegram(request.user, pedido, 'creado')
+
+                messages.success(request, f'¡Pedido #{pedido.id} creado exitosamente!')
                 return redirect('tienda:pedido_detalle', pedido_id=pedido.id)
-                
-        except ValueError as e:
-            messages.error(request, str(e))
+
+        except Exception:
+            messages.error(request, 'Error al procesar el pedido')
             return redirect('tienda:ver_carrito')
-        except Exception as e:
-            messages.error(request, 'Error al procesar el pedido. Intenta nuevamente.')
-            return redirect('tienda:ver_carrito')
-    
-    context = {
-        'carrito': carrito,
-        'items': items,
-        'total_price': carrito.total_price,
-    }
-    return render(request, 'tienda/checkout.html', context)
+
+    return render(request, 'tienda/checkout.html', {'carrito': carrito, 'items': items})
 
 
 @login_required
 def mis_pedidos(request):
     from .models import Pedido
-    pedidos = Pedido.objects.filter(user=request.user).prefetch_related('items__producto')
+    pedidos = Pedido.objects.filter(user=request.user).prefetch_related(
+        'items__producto__seller'
+    ).select_related('user').order_by('-fecha_pedido')
     return render(request, 'tienda/mis_pedidos.html', {'pedidos': pedidos})
 
 
@@ -405,28 +364,26 @@ def pedido_detalle(request, pedido_id):
     from .models import Pedido
     pedido = get_object_or_404(Pedido, id=pedido_id, user=request.user)
     items = pedido.items.select_related('producto').all()
-    
-    context = {
-        'pedido': pedido,
-        'items': items,
-    }
-    return render(request, 'tienda/pedido_detalle.html', context)
-# Tus API keys
-OPENWEATHER_API_KEY = 'a31f2609bbad95a4615050e32ca281a1'
-WORLD_TIDES_API_KEY = '1065bc95-301c-4048-88f9-159b05cff4fc'
-MOON_API_KEY = '4c05b46b094e42bfb227445efb573436'
+    return render(request, 'tienda/pedido_detalle.html', {'pedido': pedido, 'items': items})
 
-# Lista de costas y ríos argentinos
+
+# ---------- CLIMA, MAREAS Y NOTICIAS ----------
+
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
+WORLD_TIDES_API_KEY = os.getenv('WORLD_TIDES_API_KEY')
+MOON_API_KEY = os.getenv('MOON_API_KEY')
+
 COASTS_RIVERS = [
     {"name": "Mar del Plata", "lat": -38.005, "lon": -57.5426},
     {"name": "Puerto Madryn", "lat": -42.7699, "lon": -65.0382},
-    {"name": "Villa Gesell", "lat": -37.264, "lon": -56.970},
-    {"name": "Mar de Ajó", "lat": -36.460, "lon": -56.735},
-    {"name": "San Bernardo", "lat": -36.630, "lon": -56.722},
+    {"name": "Villa Gesell", "lat": -37.264, "lon": -56.97},
+    {"name": "Mar de Ajó", "lat": -36.46, "lon": -56.735},
+    {"name": "San Bernardo", "lat": -36.63, "lon": -56.722},
     {"name": "Río Paraná - Rosario", "lat": -32.9468, "lon": -60.6393},
-    {"name": "Río Uruguay - Colón", "lat": -32.203, "lon": -58.170},
+    {"name": "Río Uruguay - Colón", "lat": -32.203, "lon": -58.17},
     {"name": "Río de la Plata - Buenos Aires", "lat": -34.6037, "lon": -58.3816},
 ]
+
 
 def time_view(request):
     selected = request.GET.get("lugar", "Mar del Plata")
@@ -445,7 +402,6 @@ def time_view(request):
     }
 
     try:
-        # 🌦 Clima y viento
         weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&lang=es&appid={OPENWEATHER_API_KEY}"
         weather_resp = requests.get(weather_url, timeout=5)
         if weather_resp.status_code == 200:
@@ -456,25 +412,20 @@ def time_view(request):
             }
             data["clima"] = weather.get("weather", [{}])[0].get("description", "")
             data["temperatura"] = weather.get("main", {}).get("temp", 0)
-        else:
-            data["error"] = f"Error OpenWeather: {weather_resp.status_code}"
 
-        # 🌊 Mareas
-        tides_url = f"https://www.worldtides.info/api/v3?heights&lat={lat}&lon={lon}&key={WORLD_TIDES_API_KEY}"
-        tides_resp = requests.get(tides_url, timeout=5)
+        start_time = datetime.now()
+        tides_url = f"https://www.worldtides.info/api/v3?heights&lat={lat}&lon={lon}&start={int(start_time.timestamp())}&length=86400&key={WORLD_TIDES_API_KEY}"
+        tides_resp = requests.get(tides_url, timeout=10)
         if tides_resp.status_code == 200:
             tides = tides_resp.json()
-            data["mareas"] = tides.get("heights", [])[:10]  # primeras 10
-            data["extremos"] = tides.get("extremes", [])[:10]  # picos altos/bajos
-        else:
-            data["error"] = f"Error WorldTides: {tides_resp.status_code}"
+            data["mareas"] = tides.get("heights", [])[:10]
+            data["extremos"] = tides.get("extremes", [])[:10]
 
-        # 🌙 Fase de la luna
         moon_url = f"https://api.ipgeolocation.io/astronomy?apiKey={MOON_API_KEY}&lat={lat}&long={lon}"
         moon_resp = requests.get(moon_url, timeout=5)
         if moon_resp.status_code == 200:
             moon_data = moon_resp.json()
-            FASES_LUNARES = {
+            fases = {
                 "NEW_MOON": "Luna Nueva 🌑",
                 "WAXING_CRESCENT": "Luna Creciente 🌒",
                 "FIRST_QUARTER": "Cuarto Creciente 🌓",
@@ -484,15 +435,7 @@ def time_view(request):
                 "LAST_QUARTER": "Cuarto Menguante 🌗",
                 "WANING_CRESCENT": "Luna Menguante 🌘",
             }
-            fase = moon_data.get("moon_phase")
-            data["luna"] = FASES_LUNARES.get(fase, "No disponible")
-        else:
-            data["luna"] = "No disponible"
-
-        # 🎣 Mejor horario de pesca
-        if data["mareas"]:
-            primera_marea = data["mareas"][0].get("date", "")
-            data["mejor_horario"] = f"Cerca de {primera_marea} (aproximado)"
+            data["luna"] = fases.get(moon_data.get("moon_phase"), "No disponible")
 
     except Exception as e:
         data["error"] = str(e)
@@ -508,29 +451,23 @@ def time_view(request):
 
     return render(request, "tienda/tiempo.html", context)
 
+
 def noticias_view(request):
     noticias = cache.get('noticias_pesca')
     if noticias:
-        # Si ya hay cache, usamos eso
         return render(request, "tienda/noticias.html", {"data": noticias})
-    
-    # Si no hay cache, hacemos la llamada a OpenAI
+
     try:
         client = OpenAI(api_key=settings.OPENAI_API_KEY)
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": "Escribe 5 noticias recientes de pesca en Argentina en JSON con title, summary, date y url"}
-            ],
+            messages=[{"role": "user", "content": "Escribe 5 noticias recientes de pesca en Argentina en JSON con title, summary, date y url"}],
             max_tokens=500
         )
         text = response.choices[0].message.content
         noticias = json.loads(text)
-        
-        # Guardamos en cache por 5 horas (18000 segundos)
         cache.set('noticias_pesca', noticias, timeout=18000)
-    
-    except Exception as e:
+    except Exception:
         noticias = []
-    
+
     return render(request, "tienda/noticias.html", {"data": noticias})

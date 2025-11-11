@@ -28,20 +28,21 @@
                 
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
+                        <!-- Chat -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'simple_chat:chat' %}">
                                 <i class="fas fa-comments"></i> Chat
                             </a>
                         </li>
 
-                        <!-- Link Tiempo y Mareas -->
+                        <!-- Tiempo y Mareas -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'tienda:tiempo' %}">
                                 🌦 Tiempo y Mareas
                             </a>
                         </li>
 
-                        <!-- Link Noticias -->
+                        <!-- Noticias -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'tienda:noticias' %}">
                                 📰 Noticias
@@ -72,6 +73,13 @@
                             </a>
                         </li>
 
+                        <!-- IA & Ofertas -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'analytics:dashboard_ia' %}">
+                                <i class="fas fa-brain"></i> IA & Ofertas
+                            </a>
+                        </li>
+                        
                         <!-- Telegram -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'telegram_bot:vincular' %}">
@@ -143,7 +151,6 @@
     
     {% if user.is_authenticated %}
     <script>
-    // Actualizar contador del carrito
     function actualizarContadorCarrito() {
         fetch('{% url "tienda:carrito_count" %}')
             .then(response => response.json())
